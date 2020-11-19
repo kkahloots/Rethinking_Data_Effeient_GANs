@@ -53,7 +53,7 @@ AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 class WGAN_GP:
     def __init__(self,
-                 total_images,
+                 model_name,
                  image_size,
                  batch_size=36,
                  z_dim=128,
@@ -61,12 +61,12 @@ class WGAN_GP:
                  g_penalty=10,
                  g_lr=0.0001,
                  d_lr=0.0001):
+        self.model_name = model_name
         self.z_dim = z_dim
         self.batch_size = batch_size
         self.image_size = image_size
         self.n_critic = n_critic
         self.grad_penalty_weight = g_penalty
-        self.total_images = total_images
         self.g_opt = ops.AdamOptWrapper(learning_rate=g_lr)
         self.d_opt = ops.AdamOptWrapper(learning_rate=d_lr)
         self.G = self.build_generator()
@@ -75,14 +75,22 @@ class WGAN_GP:
         self.G.summary()
         self.D.summary()
 
-    def train(self, dataset, epochs=50):
+    def train(self, dataset, epochs=50, n_itr=1000, callbacks=None):
         z = tf.constant(random.normal((self.batch_size, 1, 1, self.z_dim)))
         g_train_loss = metrics.Mean()
         d_train_loss = metrics.Mean()
 
+        if callbacks: callbacks.on_train_begin()
         for epoch in range(epochs):
-            bar = pbar(self.total_images, self.batch_size, epoch, epochs)
+            itr_c = 0
+            bar = pbar(n_itr, n_itr//self.batch_size, epoch, epochs)
             for batch in dataset:
+                if itr_c >= n_itr:
+                    break
+
+                else:
+                    itr_c += 1
+
                 for _ in range(self.n_critic):
                     self.train_d(batch['images'])
                     d_loss = self.train_d(batch['images'])
@@ -94,17 +102,18 @@ class WGAN_GP:
 
                 bar.postfix['g_loss'] = f'{g_train_loss.result():6.3f}'
                 bar.postfix['d_loss'] = f'{d_train_loss.result():6.3f}'
-                bar.update(self.batch_size)
+                bar.update(n_itr//self.batch_size)
 
             g_train_loss.reset_states()
             d_train_loss.reset_states()
 
             bar.close()
             del bar
+            if callbacks: callbacks.on_epoch_begin(epoch)
 
             samples = self.generate_samples(z)
-            image_grid = img_merge(samples, n_rows=8).squeeze()
-            save_image_grid(image_grid, epoch + 1)
+            image_grid = img_merge(samples, n_rows=6).squeeze()
+            save_image_grid(image_grid, epoch + 1, self.model_name, output_dir='./images')
 
     @tf.function
     def train_g(self):
@@ -161,24 +170,15 @@ class WGAN_GP:
         x = ops.BatchNorm()(x)
         x = layers.ReLU()(x)
 
-
-        #while mult > 1:
         x = ops.UpConv2D(dim * (mult // 2), kernel_size=4, strides=2)(x)
         x = ops.BatchNorm()(x)
         x = layers.ReLU()(x)
         mult //= 2
 
-
-        #x = ops.UpConv2D(dim * (mult // 2), kernel_size=4, strides=2)(x)
-        #x = ops.BatchNorm()(x)
-        #x = layers.ReLU()(x)
-
-
-        #    mult //= 2
-
         x = ops.UpConv2D(3)(x)
         x = layers.Activation('tanh')(x)
         return models.Model(inputs, x, name='Generator')
+
 
     def build_discriminator(self):
         dim = self.image_size[0]

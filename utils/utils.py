@@ -33,7 +33,7 @@ import tensorflow as tf
 from absl import flags
 from tqdm.autonotebook import tqdm
 
-FLAGS = flags.FLAGS
+#FLAGS = flags.FLAGS
 
 
 def img_merge(images, n_rows=None, n_cols=None, padding=0, pad_value=0):
@@ -65,10 +65,10 @@ def img_merge(images, n_rows=None, n_cols=None, padding=0, pad_value=0):
     return img
 
 
-def save_image_grid(img_grid, epoch):
+def save_image_grid(img_grid, epoch, model_name, output_dir):
     """Saves image grid to user output dir."""
-    file_name = FLAGS.dataset + f'_{epoch}.png'
-    output_dir = os.path.join(FLAGS.output_dir, file_name)
+    file_name = model_name + f'_{epoch}.png'
+    output_dir = os.path.join(output_dir, file_name)
     tf.io.write_file(output_dir, tf.image.encode_png(tf.cast(img_grid, tf.uint8)))
 
 
