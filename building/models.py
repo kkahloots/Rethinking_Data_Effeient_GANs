@@ -48,7 +48,6 @@ from utils.utils import pbar
 from utils.utils import save_image_grid
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
-#FLAGS = flags.FLAGS
 
 
 class WGAN_GP:
@@ -83,14 +82,14 @@ class WGAN_GP:
         if callbacks: callbacks.on_train_begin()
         for epoch in range(epochs):
             itr_c = 0
-            bar = pbar(n_itr, n_itr//self.batch_size, epoch, epochs)
+            bar = pbar(n_itr, n_itr//self.batch_size + 1, epoch, epochs)
             for batch in dataset:
+
                 if itr_c >= n_itr:
                     break
 
                 else:
                     itr_c += 1
-
                 for _ in range(self.n_critic):
                     self.train_d(batch['images'])
                     d_loss = self.train_d(batch['images'])
@@ -102,7 +101,7 @@ class WGAN_GP:
 
                 bar.postfix['g_loss'] = f'{g_train_loss.result():6.3f}'
                 bar.postfix['d_loss'] = f'{d_train_loss.result():6.3f}'
-                bar.update(n_itr//self.batch_size)
+                bar.update(n_itr//self.batch_size + 1)
 
             g_train_loss.reset_states()
             d_train_loss.reset_states()
