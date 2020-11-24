@@ -30,13 +30,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import os
 import tempfile
 from functools import partial
-from pathlib import Path
+from livelossplot.plot_losses import PlotLosses
 
 import tensorflow as tf
-import tensorflow_datasets as tfds
-from absl import flags
 from tensorflow import random
 from tensorflow.python.keras import layers
 from tensorflow.python.keras import metrics
@@ -47,20 +46,21 @@ from utils.utils import img_merge
 from utils.utils import pbar
 from utils.utils import save_image_grid
 
-AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 
 class WGAN_GP:
     def __init__(self,
                  model_name,
                  image_size,
+                 save_path=None,
                  batch_size=36,
-                 z_dim=128,
+                 z_dim=256,
                  n_critic=5,
                  g_penalty=10,
                  g_lr=0.0001,
                  d_lr=0.0001):
         self.model_name = model_name
+        self.save_path = save_path
         self.z_dim = z_dim
         self.batch_size = batch_size
         self.image_size = image_size
@@ -68,28 +68,50 @@ class WGAN_GP:
         self.grad_penalty_weight = g_penalty
         self.g_opt = ops.AdamOptWrapper(learning_rate=g_lr)
         self.d_opt = ops.AdamOptWrapper(learning_rate=d_lr)
+
         self.G = self.build_generator()
         self.D = self.build_discriminator()
+
+        try:
+            self.G.load_weights(filepath=f'{self.save_path}/{self.model_name}_generator')
+            print('restore generator successfully ... ')
+
+            self.D.load_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator')
+            print('restore discriminator successfully ... ')
+        except:
+            print('unable to restore ... ')
+
+
+        # try:
+        #     self.G = models.load_model(filepath=f'{self.save_path}/{self.model_name}_generator')
+        #     print('restore generator successfully ... ')
+        #
+        #     self.D = models.load_model(filepath=f'{self.save_path}/{self.model_name}_discriminator')
+        #     print('restore discriminator successfully ... ')
+        # except:
+        #     print('unable to restore ... ')
+
+
 
         self.G.summary()
         self.D.summary()
 
-    def train(self, dataset, epochs=50, n_itr=1000, callbacks=None):
+    def train(self, dataset, epochs=50, n_itr=100, callbacks=None):
         z = tf.constant(random.normal((self.batch_size, 1, 1, self.z_dim)))
         g_train_loss = metrics.Mean()
         d_train_loss = metrics.Mean()
+        liveplot = PlotLosses()
 
         if callbacks: callbacks.on_train_begin()
         for epoch in range(epochs):
             itr_c = 0
             bar = pbar(n_itr, n_itr//self.batch_size + 1, epoch, epochs)
             for batch in dataset:
-
+                itr_c += 1
                 if itr_c >= n_itr:
+                    bar.close()
                     break
 
-                else:
-                    itr_c += 1
                 for _ in range(self.n_critic):
                     self.train_d(batch['images'])
                     d_loss = self.train_d(batch['images'])
@@ -103,16 +125,23 @@ class WGAN_GP:
                 bar.postfix['d_loss'] = f'{d_train_loss.result():6.3f}'
                 bar.update(n_itr//self.batch_size + 1)
 
+            bar.close()
+            losses = {'g_loss': d_train_loss.result(), 'd_loss': g_train_loss.result()}
+            liveplot.update(losses, epoch)
+            liveplot.send()
+
             g_train_loss.reset_states()
             d_train_loss.reset_states()
-
-            bar.close()
             del bar
-            if callbacks: callbacks.on_epoch_begin(epoch)
+
+            self.G.save_weights(filepath=f'{self.save_path}/{self.model_name}_generator')
+            self.D.save_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator')
 
             samples = self.generate_samples(z)
             image_grid = img_merge(samples, n_rows=6).squeeze()
-            save_image_grid(image_grid, epoch + 1, self.model_name, output_dir='./images')
+            img_path = f'./images/{self.model_name}'
+            os.makedirs(img_path, exist_ok=True)
+            save_image_grid(image_grid, epoch + 1, self.model_name, output_dir=img_path)
 
     @tf.function
     def train_g(self):
@@ -198,39 +227,3 @@ class WGAN_GP:
 
         x = ops.Conv2D(1, 4, 1, 'valid')(x)
         return models.Model(inputs, x, name='Discriminator')
-
-#
-# class DatasetPipeline:
-#     def __init__(self, dataset_name, epochs, batch_size, image_size, crop=False):
-#         self.dataset_name = dataset_name
-#         self.epochs = epochs
-#         self.batch_size = batch_size
-#         self.image_size = image_size
-#         self.crop = crop
-#         self.dataset_info = {}
-#
-#     def preprocess_image(self, image):
-#         if self.crop:
-#             image = tf.image.central_crop(image, 0.50)
-#         image = tf.image.resize(image, (self.image_size, self.image_size),
-#                                 antialias=True)
-#         image = (tf.dtypes.cast(image, tf.float32) / 127.5) - 1.0
-#         return image
-#
-#     def dataset_cache(self, dataset):
-#         tmp_dir = Path(tempfile.gettempdir())
-#         cache_dir = tmp_dir.joinpath('cache')
-#         cache_dir.mkdir(parents=True, exist_ok=True)
-#         for p in cache_dir.glob(self.dataset_name + '*'):
-#             p.unlink()
-#         return dataset.cache(str(cache_dir / self.dataset_name))
-#
-#     def load_dataset(self):
-#         ds, self.dataset_info = tfds.load(name=self.dataset_name,
-#                                           split=tfds.Split.ALL,
-#                                           with_info=True)
-#         ds = ds.map(lambda x: self.preprocess_image(x['image']), AUTOTUNE)
-#         ds = self.dataset_cache(ds)
-#         ds = ds.shuffle(50000, reshuffle_each_iteration=True)
-#         ds = ds.batch(self.batch_size, drop_remainder=True).prefetch(AUTOTUNE)
-#         return ds

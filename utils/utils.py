@@ -30,10 +30,7 @@ import shutil
 
 import numpy as np
 import tensorflow as tf
-from absl import flags
 from tqdm.autonotebook import tqdm
-
-#FLAGS = flags.FLAGS
 
 
 def img_merge(images, n_rows=None, n_cols=None, padding=0, pad_value=0):
