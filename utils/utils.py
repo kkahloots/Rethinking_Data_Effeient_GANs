@@ -76,8 +76,8 @@ def get_terminal_width():
     return width
 
 
-def pbar(total_images, batch_size, epoch, epochs):
-    bar = tqdm(total=(total_images // batch_size) * batch_size,
+def pbar(total_images, epoch, epochs):
+    bar = tqdm(total=total_images,
                ncols=int(get_terminal_width() * .9),
                desc=tqdm.write(f'Epoch {epoch + 1}/{epochs}'),
                postfix={
@@ -92,3 +92,49 @@ def pbar(total_images, batch_size, epoch, epochs):
                unit=' images',
                miniters=10)
     return bar
+
+
+def monitor_generator(epoch,
+                      wait,
+                      min_delta,
+                      current,
+                      best,
+                      model,
+                      mode='auto',
+                      patience=9,
+                      verbose=1,
+                      restore_best_weights=True):
+    stop_training = False
+
+    if mode not in ['auto', 'min', 'max']:
+      mode = 'auto'
+
+    if mode == 'min':
+      monitor_op = np.less
+    elif mode == 'max':
+      monitor_op = np.greater
+    else:
+        monitor_op = np.less
+
+    if monitor_op == np.greater:
+      min_delta *= 1
+    else:
+      min_delta *= -1
+
+    best_weights = model.get_weights()
+
+    if monitor_op(current - min_delta, best):
+      best = current
+      wait = 0
+
+    else:
+      wait += 1
+      if wait >= patience:
+        stopped_epoch = epoch
+        stop_training = True
+        if restore_best_weights:
+          if verbose > 0:
+            print('Restoring model weights from the end of the best epoch.')
+          model.set_weights(best_weights)
+
+    return stop_training, best, wait
