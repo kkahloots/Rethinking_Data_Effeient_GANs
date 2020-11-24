@@ -43,7 +43,7 @@ from tensorflow.python.keras import models
 
 import building.ops as ops
 from utils.utils import img_merge
-from utils.utils import pbar, monitor_generator
+from utils.utils import pbar
 from utils.utils import save_image_grid
 
 
@@ -84,18 +84,16 @@ class WGAN_GP:
         self.G.summary()
         self.D.summary()
 
-    def train(self, dataset, epochs=50, n_itr=100, min_delta=1e-9):
+    def train(self, dataset, epochs=50, n_itr=100):
         z = tf.constant(random.normal((self.batch_size, 1, 1, self.z_dim)))
         g_train_loss = metrics.Mean()
         d_train_loss = metrics.Mean()
         liveplot = PlotLosses()
-        stop_training, best, wait = False, 1e-9, 0
 
         for epoch in range(epochs):
             bar = pbar(n_itr, epoch, epochs)
             for itr_c, batch in zip(range(n_itr), dataset):
                 if itr_c >= n_itr:
-                    print('yes')
                     bar.close()
                     break
 
@@ -113,7 +111,6 @@ class WGAN_GP:
                 bar.update(itr_c)
 
             bar.close()
-            current = g_train_loss.result()
             losses = {'g_loss': g_train_loss.result(), 'd_loss': d_train_loss.result()}
             liveplot.update(losses, epoch)
             liveplot.send()
@@ -131,7 +128,6 @@ class WGAN_GP:
             os.makedirs(img_path, exist_ok=True)
             save_image_grid(image_grid, epoch + 1, self.model_name, output_dir=img_path)
 
-            stop_training, best, wait = monitor_generator(epoch, wait, min_delta, current, best, self.G)
 
     @tf.function
     def train_g(self):
