@@ -93,8 +93,7 @@ class WGAN_GP:
         for epoch in range(start_epoch, epochs):
             bar = pbar(n_itr, epoch, epochs)
             for itr_c, batch in zip(range(n_itr), dataset):
-                if itr_c >= n_itr:
-                    bar.close()
+                if bar.n >= n_itr:
                     break
 
                 for _ in range(self.n_critic):

@@ -83,15 +83,24 @@ class mybar(tqdm):
 
     @n.setter
     def n(self, value):
-        if hasattr(self, 'n'):
-            new_value = value%self.total
-        else:
-            new_value = value
+        # if hasattr(self, 'n'):
+        #     new_value = value%self.total
+        # else:
+        #     new_value = value
 
-        if value > self.total:
-            self.reset(total=self.total)
+        #if value > self.total:
+        #    self.reset(total=self.total)
 
-        self.__n = new_value
+
+        self.__n = value
+
+    # def update(self, *args, **kwargs):
+    #     if not hasattr(self, 'ototal'):
+    #          self.ototal = self.total
+    #     super(tqdm, self).update(*args, **kwargs)
+    #     return  kwargs['n'] > self.ototal
+
+
 
 def pbar(total_images, epoch, epochs):
     bar = mybar(total=total_images,
