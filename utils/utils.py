@@ -76,8 +76,25 @@ def get_terminal_width():
     return width
 
 
+class mybar(tqdm):
+    @property
+    def n(self):
+        return self.__n
+
+    @n.setter
+    def n(self, value):
+        if hasattr(self, 'n'):
+            new_value = value%self.total
+        else:
+            new_value = value
+
+        if value > self.total:
+            self.reset(total=self.total)
+
+        self.__n = new_value
+
 def pbar(total_images, epoch, epochs):
-    bar = tqdm(total=total_images,
+    bar = mybar(total=total_images,
                ncols=int(get_terminal_width() * .9),
                desc=tqdm.write(f'Epoch {epoch + 1}/{epochs}'),
                postfix={

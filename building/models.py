@@ -108,7 +108,7 @@ class WGAN_GP:
 
                 bar.postfix['g_loss'] = f'{g_train_loss.result():6.3f}'
                 bar.postfix['d_loss'] = f'{d_train_loss.result():6.3f}'
-                bar.update(itr_c)
+                bar.update(n=itr_c)
 
             bar.close()
             losses = {'g_loss': g_train_loss.result(), 'd_loss': d_train_loss.result()}
