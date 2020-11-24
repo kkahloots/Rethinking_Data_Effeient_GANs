@@ -84,13 +84,13 @@ class WGAN_GP:
         self.G.summary()
         self.D.summary()
 
-    def train(self, dataset, epochs=50, n_itr=100):
+    def train(self, dataset, start_epoch=0, epochs=50, n_itr=100):
         z = tf.constant(random.normal((self.batch_size, 1, 1, self.z_dim)))
         g_train_loss = metrics.Mean()
         d_train_loss = metrics.Mean()
         liveplot = PlotLosses()
 
-        for epoch in range(epochs):
+        for epoch in range(start_epoch, epochs):
             bar = pbar(n_itr, epoch, epochs)
             for itr_c, batch in zip(range(n_itr), dataset):
                 if itr_c >= n_itr:
