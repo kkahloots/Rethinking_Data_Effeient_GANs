@@ -69,6 +69,7 @@ class WGAN_GP:
         self.g_opt = ops.AdamOptWrapper(learning_rate=g_lr)
         self.d_opt = ops.AdamOptWrapper(learning_rate=d_lr)
 
+
         self.G = self.build_generator()
         self.D = self.build_discriminator()
 

@@ -59,6 +59,7 @@ def img_merge(images, n_rows=None, n_cols=None, padding=0, pad_value=0):
         j = idx // n_cols
         img[j * (h + padding):j * (h + padding) + h, i * (w + padding):i *
             (w + padding) + w, ...] = image
+
     return img
 
 
