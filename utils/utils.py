@@ -102,6 +102,20 @@ class mybar(tqdm):
     #     return  kwargs['n'] > self.ototal
 
 
+def vbar(total_images, epoch, epochs):
+    bar = mybar(total=total_images,
+               ncols=int(get_terminal_width() * .9),
+               desc=tqdm.write(f'Epoch {epoch + 1}/{epochs}'),
+               postfix={
+                   'd_val_loss': f'{0:6.3f}',
+                   1: 1
+               },
+               bar_format='{n_fmt}/{total_fmt} |{bar}| {rate_fmt}  '
+               'ETA: {remaining}  Elapsed Time: {elapsed}  '
+               'D Loss: {postfix[d_val_loss]}',
+               unit=' images',
+               miniters=10)
+    return bar
 
 def pbar(total_images, epoch, epochs):
     bar = mybar(total=total_images,
@@ -113,9 +127,8 @@ def pbar(total_images, epoch, epochs):
                    1: 1
                },
                bar_format='{n_fmt}/{total_fmt} |{bar}| {rate_fmt}  '
-               'ETA: {remaining}  Elapsed Time: {elapsed}  '
-               'G Loss: {postfix[g_loss]}  D Loss: {postfix['
-               'd_loss]}',
+               'ETA: {remaining}  Elapsed Time: {elapsed}  \n'
+               'G Loss: {postfix[g_loss]}  \n D Loss: {postfix[d_loss]}',
                unit=' images',
                miniters=10)
     return bar
