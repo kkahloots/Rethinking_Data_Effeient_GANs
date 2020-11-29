@@ -86,8 +86,10 @@ class WGAN_GP:
         self.G.summary()
         self.D.summary()
 
-    def train(self, dataset, val_dataset=None, start_epoch=0, epochs=int(3e4), n_itr=100, z=None):
-        if z is None:
+    def train(self, dataset, val_dataset=None, epochs=int(3e4), n_itr=100):
+        try:
+            z = tf.constant(np.load(f'{self.save_path}/{self.model_name}_z.npy'))
+        except FileNotFoundError:
             z = tf.constant(random.normal((self.batch_size, 1, 1, self.z_dim)))
             np.save(f'{self.save_path}/{self.model_name}_z', z.numpy())
 
@@ -99,6 +101,8 @@ class WGAN_GP:
 
         for i, losses in enumerate(losses_list):
             liveplot.update(losses, i)
+        
+        start_epoch = len(losses_list)    
 
         g_train_loss = metrics.Mean()
         d_train_loss = metrics.Mean()
