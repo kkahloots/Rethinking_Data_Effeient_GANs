@@ -1,269 +1,290 @@
+# MIT License
+#
+# Copyright (c) 2019 Drew Szurko
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+"""Implementation of WGANGP model.
+
+Details available at https://arxiv.org/abs/1704.00028.
+"""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+import os
+import tempfile
+from functools import partial
+from livelossplot.plot_losses import PlotLosses
+
+import tensorflow as tf
+import numpy as np
+import pickle
+from tensorflow import random
+from tensorflow.python.keras import layers
+from tensorflow.python.keras import metrics
+from tensorflow.python.keras import models
+
+import building.ops as ops
+from utils.utils import img_merge
+from utils.utils import pbar, vbar
+from utils.utils import save_image_grid
 
 
+class WGAN_GP:
+    def __init__(self,
+                 model_name,
+                 image_size,
+                 save_path=None,
+                 batch_size=36,
+                 z_dim=256,
+                 n_critic=5,
+                 g_penalty=10,
+                 g_lr=0.0001,
+                 d_lr=0.0001):
+        self.model_name = model_name
+        self.save_path = save_path
+        self.z_dim = z_dim
+        self.batch_size = batch_size
+        self.image_size = image_size
+        self.n_critic = n_critic
+        self.grad_penalty_weight = g_penalty
+        self.g_opt = ops.AdamOptWrapper(learning_rate=g_lr)
+        self.d_opt = ops.AdamOptWrapper(learning_rate=d_lr)
 
 
-# import sys
-# import numpy as np
-# from functools import partial
-# import matplotlib.pyplot as plt
-#
-# import tensorflow as tf
-#
-#
-# from tensorflow.keras.layers import Add
-# from tensorflow.keras.layers import Input, Dense, Reshape, Flatten, Dropout
-# from tensorflow.keras.layers import BatchNormalization, Activation, ZeroPadding2D
-# from tensorflow.keras.layers import LeakyReLU
-# from tensorflow.keras.layers import UpSampling2D, Conv2D
-# from tensorflow.keras.models import Sequential, Model
-# from tensorflow.keras.optimizers import RMSprop
-# from tqdm import tqdm
-#
-# #import tensorflow.keras.backend as K
-#
-# class RandomWeightedAverage(Add):
-#     def __init__(self, batch_size=36, **kwargs):
-#         self.batch_size = batch_size
-#         super(Add, self).__init__(**kwargs)
-#
-#     # Provides a (random) weighted average between real and generated image samples
-#     def _merge_function(self, inputs):
-#         input1, input2 = inputs
-#         alpha = tf.random.uniform(shape=(self.batch_size, 1, 1, 1))
-#         return (alpha * input1) + ((1 - alpha) * input2)
-#
-#
-# class WGAN_GP():
-#     def __init__(self, img_shape, latent_dim=100, n_critic=5, batch_size=32):
-#         self.batch_size = batch_size
-#         self.img_rows = img_shape[0]
-#         self.img_cols = img_shape[1]
-#         self.channels = img_shape[2]
-#
-#         self.img_shape = (self.img_rows, self.img_cols, self.channels)
-#         self.latent_dim = latent_dim
-#
-#         # Following parameter and optimizer set as recommended in paper
-#         self.n_critic = n_critic
-#         optimizer = RMSprop(lr=0.00005)
-#
-#         # Build the generator and critic
-#         self.generator = self.build_generator()
-#         self.critic = self.build_critic()
-#
-#         # -------------------------------
-#         # Construct Computational Graph
-#         #       for the Critic
-#         # -------------------------------
-#
-#         # Freeze generator's layers while training critic
-#         self.generator.trainable = False
-#
-#         # Image input (real sample)
-#         real_img = Input(shape=self.img_shape)
-#
-#         # Noise input
-#         z_disc = Input(shape=(self.latent_dim,))
-#         # Generate image based of noise (fake sample)
-#         fake_img = self.generator(z_disc)
-#
-#         # Discriminator determines validity of the real and fake images
-#         fake = self.critic(fake_img)
-#         valid = self.critic(real_img)
-#
-#         # Construct weighted average between real and fake images
-#         interpolated_img = RandomWeightedAverage()([real_img, fake_img])
-#         # Determine validity of weighted sample
-#         validity_interpolated = self.critic(interpolated_img)
-#
-#         # Use Python partial to provide loss function with additional
-#         # 'averaged_samples' argument
-#         partial_gp_loss = partial(self.gradient_penalty_loss, averaged_samples=interpolated_img)
-#         partial_gp_loss.__name__ = 'gradient_penalty'  # Keras requires function names
-#
-#         self.critic_model = Model(name='critic', inputs={'image_disc': real_img, 'z_disc': z_disc},
-#                                   outputs={'valid': valid, 'fake': fake, 'interpolated':validity_interpolated})
-#         self.critic_model.input_names = ['image_disc', 'z_disc']
-#         self.critic_model.output_names = ['valid', 'fake', 'interpolated']
-#
-#         self.critic_model.compile(loss=[self.wasserstein_loss,
-#                                         self.wasserstein_loss,
-#                                         partial_gp_loss],
-#                                   optimizer=optimizer,
-#                                   loss_weights=[1, 1, 10])
-#         # -------------------------------
-#         # Construct Computational Graph
-#         #         for Generator
-#         # -------------------------------
-#
-#         # For the generator we freeze the critic's layers
-#         self.critic.trainable = False
-#         self.generator.trainable = True
-#
-#         # Sampled noise for input to generator
-#         z_gen = Input(shape=(self.latent_dim,))
-#         # Generate images based of noise
-#         img = self.generator(z_gen)
-#         # Discriminator determines validity
-#         valid = self.critic(img)
-#         # Defines generator model
-#         self.generator_model = Model(name='generator', inputs={'z_gen':z_gen}, outputs={'image_gen': valid})
-#         self.generator_model.input_names = ['z_gen']
-#         self.generator_model.output_names = ['image_gen']
-#
-#         self.generator_model.compile(loss=self.wasserstein_loss, optimizer=optimizer)
-#
-#     #@tf.function
-#     def gradient_penalty_loss(self, y_true, y_pred, averaged_samples):
-#         """
-#         Computes gradient penalty based on prediction and weighted real / fake samples
-#         """
-#         print(y_pred.numpy(), averaged_samples.numpy())
-#         gradients = tf.gradients(y_pred, averaged_samples)[0]
-#         # compute the euclidean norm by squaring ...
-#         gradients_sqr = tf.square(gradients)
-#         #   ... summing over the rows ...
-#         gradients_sqr_sum = tf.reduce_sum(gradients_sqr,
-#                                   axis=np.arange(1, len(gradients_sqr.shape)))
-#         #   ... and sqrt
-#         gradient_l2_norm = tf.sqrt(gradients_sqr_sum)
-#         # compute lambda * (1 - ||grad||)^2 still for each single sample
-#         gradient_penalty = tf.square(1 - gradient_l2_norm)
-#         # return the mean as loss over all the batch samples
-#         return tf.reduce_mean(gradient_penalty)
-#
-#
-#     def wasserstein_loss(self, y_true, y_pred):
-#         return tf.reduce_mean(y_true * y_pred)
-#
-#     def build_generator(self):
-#         c = 25
-#         model = Sequential(name='generator')
-#
-#         model.add(Dense(128 * c * c, activation="relu", input_dim=self.latent_dim))
-#         model.add(Reshape((c, c, 128)))
-#         model.add(UpSampling2D())
-#         model.add(Conv2D(128, kernel_size=4, padding="same"))
-#         model.add(BatchNormalization(momentum=0.8))
-#         model.add(Activation("relu"))
-#         model.add(UpSampling2D())
-#         model.add(Conv2D(64, kernel_size=4, padding="same"))
-#         model.add(BatchNormalization(momentum=0.8))
-#         model.add(Activation("relu"))
-#         model.add(Conv2D(self.channels, kernel_size=4, padding="same"))
-#         model.add(Activation("tanh"))
-#
-#         model.summary()
-#
-#         noise = Input(name='z_latent', shape=(self.latent_dim,))
-#         img = model(noise)
-#
-#         return Model(noise, img)
-#
-#     def build_critic(self):
-#
-#         model = Sequential(name='critic')
-#
-#         model.add(Conv2D(16, kernel_size=3, strides=2, input_shape=self.img_shape, padding="same"))
-#         model.add(LeakyReLU(alpha=0.2))
-#         model.add(Dropout(0.25))
-#         model.add(Conv2D(32, kernel_size=3, strides=2, padding="same"))
-#         model.add(ZeroPadding2D(padding=((0, 1), (0, 1))))
-#         model.add(BatchNormalization(momentum=0.8))
-#         model.add(LeakyReLU(alpha=0.2))
-#         model.add(Dropout(0.25))
-#         model.add(Conv2D(64, kernel_size=3, strides=2, padding="same"))
-#         model.add(BatchNormalization(momentum=0.8))
-#         model.add(LeakyReLU(alpha=0.2))
-#         model.add(Dropout(0.25))
-#         model.add(Conv2D(128, kernel_size=3, strides=1, padding="same"))
-#         model.add(BatchNormalization(momentum=0.8))
-#         model.add(LeakyReLU(alpha=0.2))
-#         model.add(Dropout(0.25))
-#         model.add(Flatten())
-#         model.add(Dense(1))
-#
-#         model.summary()
-#
-#         img = Input(name='image', shape=self.img_shape)
-#         validity = model(img)
-#
-#         return Model(img, validity)
-#
-#
-#     def train(self, train_dataset, val_dataset, epochs, sample_interval=50):
-#
-#         #train_itr = ds2itr(train_dataset)
-#         #val_itr = ds2itr(val_dataset)
-#
-#         # Load the dataset
-#         # (X_train, _), (_, _) = mnist.load_data()
-#
-#         # Rescale -1 to 1
-#         # X_train = (X_train.astype(np.float32) - 127.5) / 127.5
-#         # X_train = np.expand_dims(X_train, axis=3)
-#
-#         # Adversarial ground truths
-#         valid = -tf.ones((self.batch_size, 1))
-#         fake = tf.ones((self.batch_size, 1))
-#         dummy = tf.zeros((self.batch_size, 1))  # Dummy gt for gradient penalty
-#
-#         for epoch in tqdm(range(epochs)):
-#
-#             for _ in range(self.n_critic):
-#                 # ---------------------
-#                 #  Train Discriminator
-#                 # ---------------------
-#
-#                 # Select a random batch of images
-#                 #idx = np.random.randint(0, X_train.shape[0], batch_size)
-#                 #imgs = X_train[idx]
-#                 #train_itr()
-#                 #try:
-#                     #iteration_counter = 0
-#                     #max_iter = 100
-#                     #for data in train_dataset:
-#
-#                 imgs = next(train_dataset)['images']
-#
-#                 # Sample generator input
-#                 noise = tf.random.normal(mean=0, stddev=1, shape=(self.batch_size, self.latent_dim))
-#                 # Train the critic
-#                 d_loss = self.critic_model.train_on_batch(x={'image_disc':imgs, 'z_disc':noise},
-#                                                           y={'valid':valid, 'fake':fake, 'interpolated': dummy})
-#
-#                 #        iteration_counter +=1
-#                 #        if iteration_counter> max_iter: break
-#                 #except:
-#                 #    pass
-#             # ---------------------
-#             #  Train Generator
-#             # ---------------------
-#
-#             g_loss = self.generator_model.train_on_batch({'z_gen': noise}, {'image_gen': valid})
-#
-#             # Plot the progress
-#             print("%d [D loss: %f] [G loss: %f]" % (epoch, d_loss[0], g_loss))
-#
-#             # If at save interval => save generated image samples
-#             if epoch % sample_interval == 0:
-#                 self.sample_images(epoch)
-#
-#     def sample_images(self, epoch):
-#         r, c = 5, 5
-#         noise = tf.random.normal(mean=0, stddev=1, shape=(r * c, self.latent_dim))
-#         gen_imgs = self.generator.predict(noise)
-#
-#         # Rescale images 0 - 1
-#         gen_imgs = 0.5 * gen_imgs + 0.5
-#
-#         fig, axs = plt.subplots(r, c)
-#         cnt = 0
-#         for i in range(r):
-#             for j in range(c):
-#                 axs[i, j].imshow(gen_imgs[cnt, :, :, 0], cmap='gray')
-#                 axs[i, j].axis('off')
-#                 cnt += 1
-#         fig.savefig("images/mnist_%d.png" % epoch)
-#         plt.close()
-#
+        self.G = self.build_generator()
+        self.D = self.build_discriminator()
+
+        try:
+            self.G.load_weights(filepath=f'{self.save_path}/{self.model_name}_generator')
+            print('restore generator successfully ... ')
+
+            self.D.load_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator')
+            print('restore discriminator successfully ... ')
+        except:
+            print('unable to restore ... ')
+
+        self.G.summary()
+        self.D.summary()
+
+    def train(self, dataset, val_dataset=None, epochs=int(3e4), n_itr=100):
+        try:
+            z = tf.constant(np.load(f'{self.save_path}/{self.model_name}_z.npy'))
+        except FileNotFoundError:
+            z = tf.constant(random.normal((self.batch_size, 1, 1, self.z_dim)))
+            np.save(f'{self.save_path}/{self.model_name}_z', z.numpy())
+
+        liveplot = PlotLosses()
+        try:
+            losses_list = pickle.load(open(f'{self.save_path}/{self.model_name}_losses_list.pkl', 'rb'))
+        except:
+            losses_list = []
+
+        for i, losses in enumerate(losses_list):
+            liveplot.update(losses, i)
+        
+        start_epoch = len(losses_list)    
+
+        g_train_loss = metrics.Mean()
+        d_train_loss = metrics.Mean()
+        d_val_loss = metrics.Mean()
+
+
+        for epoch in range(start_epoch, epochs):
+            train_bar = pbar(n_itr, epoch, epochs)
+            for itr_c, batch in zip(range(n_itr), dataset):
+                if train_bar.n >= n_itr:
+                    break
+
+                for _ in range(self.n_critic):
+                    d_loss = self.train_d(batch['images'])
+                    d_train_loss(d_loss)
+
+                g_loss = self.train_g()
+                g_train_loss(g_loss)
+                self.train_g()
+
+                train_bar.postfix['g_loss'] = f'{g_train_loss.result():6.3f}'
+                train_bar.postfix['d_loss'] = f'{d_train_loss.result():6.3f}'
+                train_bar.update(n=itr_c)
+
+            train_bar.close()
+
+            if val_dataset:
+                val_bar = vbar(n_itr//5, epoch, epochs)
+                for itr_c, batch in zip(range(n_itr//5), val_dataset):
+                    if val_bar.n >= n_itr//5:
+                        break
+
+                    d_val_l = self.val_d(batch['images'])
+                    d_val_loss(d_val_l)
+
+                    val_bar.postfix['d_val_loss'] = f'{d_val_loss.result():6.3f}'
+                    val_bar.update(n=itr_c)
+                val_bar.close()
+
+
+            losses = {'g_loss': g_train_loss.result(),
+                      'd_loss': d_train_loss.result(),
+                      'd_val_loss': d_val_loss.result()}
+            losses_list += [losses]
+            pickle.dump(losses_list, open(f'{self.save_path}/{self.model_name}_losses_list.pkl', 'wb'))
+            liveplot.update(losses, epoch)
+            liveplot.send()
+
+            g_train_loss.reset_states()
+            d_train_loss.reset_states()
+            d_val_loss.reset_states()
+            del train_bar
+            del val_bar
+
+            self.G.save_weights(filepath=f'{self.save_path}/{self.model_name}_generator')
+            self.D.save_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator')
+
+            if epoch >= int(2e4):
+                if epoch%1000 == 0:
+                    self.G.save_weights(filepath=f'{self.save_path}/{self.model_name}_generator{epoch}')
+                    self.D.save_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator{epoch}')
+
+            if epoch%5 ==0:
+                samples = self.generate_samples(z)
+                image_grid = img_merge(samples, n_rows=6).squeeze()
+                img_path = f'./images/{self.model_name}'
+                os.makedirs(img_path, exist_ok=True)
+                save_image_grid(image_grid, epoch + 1, self.model_name, output_dir=img_path)
+
+
+    @tf.function
+    def train_g(self):
+        z = random.normal((self.batch_size, 1, 1, self.z_dim))
+        with tf.GradientTape() as t:
+            x_fake = self.G(z, training=True)
+            fake_logits = self.D(x_fake, training=True)
+            loss = ops.g_loss_fn(fake_logits)
+        grad = t.gradient(loss, self.G.trainable_variables)
+        self.g_opt.apply_gradients(zip(grad, self.G.trainable_variables))
+        return loss
+
+    @tf.function
+    def train_d(self, x_real):
+        z = random.normal((self.batch_size, 1, 1, self.z_dim))
+        with tf.GradientTape() as t:
+            x_fake = self.G(z, training=True)
+            fake_logits = self.D(x_fake, training=True)
+            real_logits = self.D(x_real, training=True)
+            cost = ops.d_loss_fn(fake_logits, real_logits)
+            gp = self.gradient_penalty(partial(self.D, training=True), x_real, x_fake)
+            cost += self.grad_penalty_weight * gp
+        grad = t.gradient(cost, self.D.trainable_variables)
+        self.d_opt.apply_gradients(zip(grad, self.D.trainable_variables))
+        return cost
+
+
+    @tf.function
+    def val_d(self, x_real):
+        z = random.normal((self.batch_size, 1, 1, self.z_dim))
+        x_fake = self.G(z, training=False)
+        fake_logits = self.D(x_fake, training=False)
+        real_logits = self.D(x_real, training=False)
+        cost = ops.d_loss_fn(fake_logits, real_logits)
+        gp = self.gradient_penalty(partial(self.D, training=False), x_real, x_fake)
+        cost += self.grad_penalty_weight * gp
+        return cost
+
+    def gradient_penalty(self, f, real, fake):
+        alpha = random.uniform([self.batch_size, 1, 1, 1], 0., 1.)
+        diff = fake - real
+        inter = real + (alpha * diff)
+        with tf.GradientTape() as t:
+            t.watch(inter)
+            pred = f(inter)
+        grad = t.gradient(pred, [inter])[0]
+        slopes = tf.sqrt(tf.reduce_sum(tf.square(grad), axis=[1, 2, 3]))
+        gp = tf.reduce_mean((slopes - 1.)**2)
+        return gp
+
+    @tf.function
+    def generate_samples(self, z):
+        """Generates sample images using random values from a Gaussian distribution."""
+        return self.G(z, training=False)
+
+    # def build_generator(self):
+    #     dim = self.image_size[0]
+    #     mult = dim // 8
+    #
+    #     x = inputs = layers.Input((1, 1, self.z_dim))
+    #     x = ops.UpConv2D(dim * mult, 5, 1, 'valid')(x)
+    #     x = ops.BatchNorm()(x)
+    #     x = layers.ReLU()(x)
+    #
+    #     x = ops.UpConv2D(dim * mult, 4, 5, 'valid')(x)
+    #     x = ops.BatchNorm()(x)
+    #     x = layers.ReLU()(x)
+    #
+    #     x = ops.UpConv2D(dim * (mult // 2), kernel_size=4, strides=2)(x)
+    #     x = ops.BatchNorm()(x)
+    #     x = layers.ReLU()(x)
+    #     mult //= 2
+    #
+    #     x = ops.UpConv2D(3)(x)
+    #     x = layers.Activation('tanh')(x)
+    #     return models.Model(inputs, x, name='Generator')
+
+    def build_generator(self):
+        dim = self.image_size[0]
+        mult = dim // 8
+
+        x = inputs = layers.Input((1, 1, self.z_dim))
+        x = ops.UpConv2D(dim//2 * mult, 4, 1, 'valid')(x)
+        x = ops.BatchNorm()(x)
+        x = layers.ReLU()(x)
+
+        while mult > 1:
+            x = ops.UpConv2D(dim//2 * (mult // 2))(x)
+            x = ops.BatchNorm()(x)
+            x = layers.ReLU()(x)
+
+            mult //= 2
+
+        x = ops.UpConv2D(3)(x)
+        x = layers.Activation('tanh')(x)
+        return models.Model(inputs, x, name='Generator')
+
+    def build_discriminator(self):
+        dim = self.image_size[0]
+        mult = 1
+        i = dim // 2
+
+        x = inputs = layers.Input((dim, dim, 3))
+        x = ops.Conv2D(dim//2)(x)
+        x = ops.LeakyRelu()(x)
+
+        while i > 4:
+            x = ops.Conv2D(dim//2 * (2 * mult))(x)
+            x = ops.LayerNorm(axis=[1, 2, 3])(x)
+            x = ops.LeakyRelu()(x)
+
+            i //= 2
+            mult *= 2
+
+        x = ops.Conv2D(1, 4, 1, 'valid')(x)
+        return models.Model(inputs, x, name='Discriminator')
