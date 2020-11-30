@@ -71,6 +71,7 @@ class DiffAugment_WGAN_GP:
             z = tf.constant(np.load(f'{self.save_path}/{self.model_name}_z.npy'))
         except FileNotFoundError:
             z = tf.constant(random.normal((self.batch_size, 1, 1, self.z_dim)))
+            os.makedirs(self.save_path, exist_ok=True)
             np.save(f'{self.save_path}/{self.model_name}_z', z.numpy())
 
         liveplot = PlotLosses()
