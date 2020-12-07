@@ -1,0 +1,2 @@
+model_checkpoint_path: "pokemon_AUG_PLUS_GAN_discriminator"
+all_model_checkpoint_paths: "pokemon_AUG_PLUS_GAN_discriminator"
