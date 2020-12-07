@@ -151,7 +151,7 @@ class AugmentPlus_WGAN_GP:
                 os.makedirs(img_path, exist_ok=True)
                 save_image_grid(image_grid, epoch + 1, self.model_name, output_dir=img_path)
 
-        return True
+         return True
 
     @tf.function
     def train_g(self, epoch):
