@@ -26,9 +26,9 @@ import building.ops as ops
 from utils.utils import img_merge
 from utils.utils import pbar, vbar
 from utils.utils import save_image_grid
-from augmentation.DiffAugment import DiffAugment
+from augmentation.DiffAugmentPlus import Augment
 
-class DiffAugmentPluse_WGAN_GP:
+class AugmentPlus_WGAN_GP:
     def __init__(self,
                  model_name,
                  image_size,
@@ -49,7 +49,6 @@ class DiffAugmentPluse_WGAN_GP:
         self.grad_penalty_weight = g_penalty
         self.g_opt = ops.AdamOptWrapper(learning_rate=g_lr)
         self.d_opt = ops.AdamOptWrapper(learning_rate=d_lr)
-        self.policy = 'color,translation,cutout'
 
         self.G = self.build_generator()
         self.D = self.build_discriminator()
@@ -97,12 +96,11 @@ class DiffAugmentPluse_WGAN_GP:
                     break
 
                 for _ in range(self.n_critic):
-                    d_loss = self.train_d(batch['images'])
+                    d_loss = self.train_d(batch['images'], epoch)
                     d_train_loss(d_loss)
 
-                g_loss = self.train_g()
+                g_loss = self.train_g(epoch)
                 g_train_loss(g_loss)
-                self.train_g()
 
                 train_bar.postfix['g_loss'] = f'{g_train_loss.result():6.3f}'
                 train_bar.postfix['d_loss'] = f'{d_train_loss.result():6.3f}'
@@ -153,25 +151,26 @@ class DiffAugmentPluse_WGAN_GP:
                 os.makedirs(img_path, exist_ok=True)
                 save_image_grid(image_grid, epoch + 1, self.model_name, output_dir=img_path)
 
+        return True
 
     @tf.function
-    def train_g(self):
+    def train_g(self, epoch):
         z = random.normal((self.batch_size, 1, 1, self.z_dim))
         with tf.GradientTape() as t:
             x_fake = self.G(z, training=True)
-            fake_logits = self.D(DiffAugment(x_fake, policy=self.policy), training=True)
+            fake_logits = self.D(Augment(x_fake, epoch=epoch), training=True)
             loss = ops.g_loss_fn(fake_logits)
         grad = t.gradient(loss, self.G.trainable_variables)
         self.g_opt.apply_gradients(zip(grad, self.G.trainable_variables))
         return loss
 
     @tf.function
-    def train_d(self, x_real):
+    def train_d(self, x_real, epoch):
         z = random.normal((self.batch_size, 1, 1, self.z_dim))
         with tf.GradientTape() as t:
             x_fake = self.G(z, training=True)
-            fake_logits = self.D(DiffAugment(x_fake, policy=self.policy), training=True)
-            real_logits = self.D(DiffAugment(x_real, policy=self.policy), training=True)
+            fake_logits = self.D(Augment(x_fake, epoch=epoch), training=True)
+            real_logits = self.D(Augment(x_real, epoch=epoch), training=True)
             cost = ops.d_loss_fn(fake_logits, real_logits)
             gp = self.gradient_penalty(partial(self.D, training=True), x_real, x_fake)
             cost += self.grad_penalty_weight * gp
@@ -208,27 +207,6 @@ class DiffAugmentPluse_WGAN_GP:
         """Generates sample images using random values from a Gaussian distribution."""
         return self.G(z, training=False)
 
-    # def build_generator(self):
-    #     dim = self.image_size[0]
-    #     mult = dim // 8
-    #
-    #     x = inputs = layers.Input((1, 1, self.z_dim))
-    #     x = ops.UpConv2D(dim * mult, 5, 1, 'valid')(x)
-    #     x = ops.BatchNorm()(x)
-    #     x = layers.ReLU()(x)
-    #
-    #     x = ops.UpConv2D(dim * mult, 4, 5, 'valid')(x)
-    #     x = ops.BatchNorm()(x)
-    #     x = layers.ReLU()(x)
-    #
-    #     x = ops.UpConv2D(dim * (mult // 2), kernel_size=4, strides=2)(x)
-    #     x = ops.BatchNorm()(x)
-    #     x = layers.ReLU()(x)
-    #     mult //= 2
-    #
-    #     x = ops.UpConv2D(3)(x)
-    #     x = layers.Activation('tanh')(x)
-    #     return models.Model(inputs, x, name='Generator')
 
     def build_generator(self):
         dim = self.image_size[0]

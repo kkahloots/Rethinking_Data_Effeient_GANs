@@ -10,6 +10,13 @@ from augmentation.Cloner import Clone
 from augmentation.Colorizer import Colorize
 from augmentation.Skitcher import Skitch
 
+cycle_epoch = int(1e4)
+
+def Augment(x, epoch=0):
+    level = epoch//cycle_epoch
+    return DiffAugmentPlus(x, level=level)
+
+
 def DiffAugmentPlus(x, level=1):
     fns = []
     for _ in range(level):
@@ -150,11 +157,11 @@ AUGMENT_FNS = {
     'brightness': rand_brightness,
     'saturation': rand_saturation,
     'contrast': rand_contrast,
-    'skitch': skitch,
+    #'skitch': skitch,
     'colorize': rand_colorize,
     'skew': rand_skew,
     'shear': rand_shear,
     'rotate': rand_rotate,
     'zoom': rand_zoom,
-    'cutout': rand_cutout,
+    #'cutout': rand_cutout,
 }
