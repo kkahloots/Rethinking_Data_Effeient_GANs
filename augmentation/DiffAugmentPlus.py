@@ -11,9 +11,10 @@ from augmentation.Colorizer import Colorize
 from augmentation.Skitcher import Skitch
 
 cycle_epoch = int(1e4)
+max_level = 5
 
 def Augment(x, epoch=0):
-    level = epoch//cycle_epoch
+    level = min(epoch//cycle_epoch, max_level)
     return DiffAugmentPlus(x, level=level)
 
 

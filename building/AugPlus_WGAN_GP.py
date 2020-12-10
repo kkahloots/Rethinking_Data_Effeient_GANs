@@ -65,7 +65,7 @@ class AugmentPlus_WGAN_GP:
         self.G.summary()
         self.D.summary()
 
-    def train(self, dataset, val_dataset=None, epochs=int(3e4), n_itr=100):
+    def train(self, dataset, val_dataset=None, epochs=int(6e4), n_itr=100):
         try:
             z = tf.constant(np.load(f'{self.save_path}/{self.model_name}_z.npy'))
         except FileNotFoundError:
@@ -144,14 +144,14 @@ class AugmentPlus_WGAN_GP:
                     self.G.save_weights(filepath=f'{self.save_path}/{self.model_name}_generator{epoch}')
                     self.D.save_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator{epoch}')
 
-            if epoch%5 ==0:
+            if epoch%100 ==0:
                 samples = self.generate_samples(z)
                 image_grid = img_merge(samples, n_rows=6).squeeze()
-                img_path = f'./images/{self.model_name}'
+                img_path = f'{self.save_path}/images/{self.model_name}'
                 os.makedirs(img_path, exist_ok=True)
                 save_image_grid(image_grid, epoch + 1, self.model_name, output_dir=img_path)
 
-         return True
+        return True
 
     @tf.function
     def train_g(self, epoch):
