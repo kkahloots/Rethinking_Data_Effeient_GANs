@@ -152,7 +152,9 @@ def rand_zoom(x):
 
 
 AUGMENT_FNS = {
-    'clone': clone,
+    'clone1': clone,
+    'clone2': clone,
+    'clone3': clone,
     'distort': rand_distort,
     'flip': rand_flip,
     'brightness': rand_brightness,
