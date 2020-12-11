@@ -9,12 +9,12 @@ from PIL import Image
 from augmentation.Cloner import Clone
 from augmentation.Colorizer import Colorize
 from augmentation.Skitcher import Skitch
+from augmentation.Patcher import Patcher
 
 cycle_epoch = int(1e4)
 max_level = 5
 
 def Augment(x, epoch=0):
-
     level = min(epoch//cycle_epoch, max_level)
     return  DiffAugmentPlus(x, level=level)
 
@@ -160,10 +160,16 @@ def rand_zoom(x):
                                          max_factor=random.randint(10, 12) / 10), x.numpy()), tf.float32)
 
 
+def rand_patch(x):
+    return tf.cast(tranform(Patcher(probability=1), x.numpy()), tf.float32)
+
+
 AUGMENT_FNS = {
     'clone1': clone,
     'clone2': clone,
     'clone3': clone,
+    'clone4': clone,
+    'patch': rand_patch,
     'distort': rand_distort,
     'flip': rand_flip,
     'brightness': rand_brightness,
