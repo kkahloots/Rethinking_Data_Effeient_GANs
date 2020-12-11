@@ -87,7 +87,7 @@ def rand_cutout(x, ratio=0.25):
     return x
 
 
-def tranform(func, images, padding=25):
+def tranform(func, images, padding=10):
     cv_images = [cv2.cvtColor((image * 255).astype(np.uint8), cv2.IMREAD_COLOR) for image in images]
     dim = cv_images[0].shape[:2]
     if str(func) == 'Skew':
