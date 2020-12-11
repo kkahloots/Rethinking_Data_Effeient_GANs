@@ -88,7 +88,7 @@ def rand_cutout(x, ratio=0.25):
 
 
 def tranform(func, images):
-    padding = random.randint(1, images.shape[0][0] // 3 + 1)
+    padding = random.randint(1, images.shape[0] // 3 + 1)
     cv_images = [cv2.cvtColor((image * 255).astype(np.uint8), cv2.IMREAD_COLOR) for image in images]
     dim = cv_images[0].shape[:2]
     if str(func) == 'Skew':
@@ -110,7 +110,7 @@ def tranform(func, images):
 
 def rand_skew(x):
     return tf.cast(tranform(Skew(probability=1, skew_type="RANDOM", magnitude=0.7),
-                            x.numpy(), ), tf.float32)
+                            x.numpy() ), tf.float32)
 
 
 def rand_colorize(x):
@@ -118,15 +118,15 @@ def rand_colorize(x):
 
 
 def rand_distort(x):
-    return tf.cast(tranform(Distort(probability=1, grid_width=random.randint(1, 50),
-                                            grid_height=random.randint(1, 50),
-                                            magnitude=random.randint(1, 5)), x.numpy()), tf.float32)
+    return tf.cast(tranform(Distort(probability=1, grid_width=random.randint(1, x.shape[0]//5 + 1),
+                                            grid_height=random.randint(1, x.shape[0]//5 + 1),
+                                            magnitude=random.randint(1, 10)), x.numpy()), tf.float32)
 
 
 def rand_shear(x):
     return tf.cast(tranform(Shear(probability=1, max_shear_left=0, max_shear_right=random.randint(5, 15)) \
                   if random.randint(0, 1) == 1 else Shear(probability=1, max_shear_left=random.randint(5, 15),
-                                                          max_shear_right=0), x.numpy(), random.randint(1, 50)), tf.float32)
+                                                          max_shear_right=0), x.numpy()), tf.float32)
 
 
 def clone(x):
@@ -134,22 +134,22 @@ def clone(x):
 
 
 def rand_flip(x):
-    return tf.cast(tranform(Flip(probability=1, top_bottom_left_right="RANDOM"), x.numpy(), random.randint(1, 50)),
+    return tf.cast(tranform(Flip(probability=1, top_bottom_left_right="RANDOM"), x.numpy()),
                    tf.float32)
 
 
 def skitch(x):
-    return tf.cast(tranform(Skitch(probability=1), x.numpy(), random.randint(1, 50)), tf.float32)
+    return tf.cast(tranform(Skitch(probability=1), x.numpy()), tf.float32)
 
 
 def rand_rotate(x):
     return tf.cast(tranform(Rotate(probability=1, rotation=random.randint(1, 360)),
-                            x.numpy(), random.randint(1, 50)), tf.float32)
+                            x.numpy()), tf.float32)
 
 
 def rand_zoom(x):
     return tf.cast(tranform(Zoom(probability=1, min_factor=random.randint(2, 10) / 10,
-                                         max_factor=random.randint(10, 12) / 10), x.numpy(), random.randint(1, 50)), tf.float32)
+                                         max_factor=random.randint(10, 12) / 10), x.numpy()), tf.float32)
 
 
 AUGMENT_FNS = {
