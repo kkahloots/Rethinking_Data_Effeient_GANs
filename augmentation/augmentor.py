@@ -10,7 +10,8 @@ from utils.augmentation.Skitcher import Skitch
 import random
 
 
-def do_operation(opt, image, padding=10):
+def do_operation(opt, image):
+    padding = random.randint(1, image.shape[0]//3 + 1)
     image_cv = cv2.cvtColor((image * 255).astype(np.uint8), cv2.IMREAD_COLOR)  # [..., ::-1]
     dim = image_cv.shape[:2]
 
