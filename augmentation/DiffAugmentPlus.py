@@ -119,7 +119,7 @@ def rand_colorize(x):
 def rand_distort(x):
     return tf.cast(tranform(Distort(probability=1, grid_width=random.randint(1, 50),
                                             grid_height=random.randint(1, 50),
-                                            magnitude=3), x.numpy()), tf.float32)
+                                            magnitude=random.randint(1, 5)), x.numpy()), tf.float32)
 
 
 def rand_shear(x):
