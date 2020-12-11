@@ -14,17 +14,25 @@ cycle_epoch = int(1e4)
 max_level = 5
 
 def Augment(x, epoch=0):
+
     level = min(epoch//cycle_epoch, max_level)
-    return DiffAugmentPlus(x, level=level)
+    return  DiffAugmentPlus(x, level=level)
 
 
 def DiffAugmentPlus(x, level=1):
-    fns = []
-    for _ in range(level):
-        fns += [AUGMENT_FNS[random.choice([*AUGMENT_FNS.keys()])]]
-    for f in fns:
-        print(f)
-        x = f(x)
+    aug_x = None
+    while aug_x is None:
+        try:
+            fns = []
+            for _ in range(level):
+                fns += [AUGMENT_FNS[random.choice([*AUGMENT_FNS.keys()])]]
+            for f in fns:
+                print(f)
+                x = f(x)
+            aug_x = 1
+        except:
+            pass
+
     return x
 
 
