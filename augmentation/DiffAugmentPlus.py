@@ -3,13 +3,14 @@ import random
 import cv2
 import numpy as np
 import tensorflow as tf
-from Augmentor.Operations import Skew, Distort, Rotate, Shear, Flip, Zoom
-from PIL import Image
+from Augmentor.Operations import Skew, Distort, Shear, Flip, Zoom
+from PIL import Image, ImageChops
 
 from augmentation.Cloner import Clone
 from augmentation.Colorizer import Colorize
 from augmentation.Skitcher import Skitch
 from augmentation.Patcher import Patcher
+from augmentation.Rotate import Rotate
 
 cycle_epoch = int(1e4)
 max_level = 5
@@ -96,16 +97,16 @@ def rand_cutout(x, ratio=0.25):
 
 
 def tranform(func, images):
-    padding = random.randint(1, images.shape[0] // 3 + 1)
     cv_images = [cv2.cvtColor((image * 255).astype(np.uint8), cv2.IMREAD_COLOR) for image in images]
     dim = cv_images[0].shape[:2]
-    if str(func) == 'Skew':
-        color = [0, 0, 0]
-        top, bottom = padding, padding
-        left, right = padding, padding
+
+    if str(func) in ['Skew', 'Zoom', 'Rotate']:
+        top, bottom = random.randint(0, images.shape[0] // 2 + 1), random.randint(0, images.shape[0] // 2 + 1)
+        left, right = random.randint(0, images.shape[0] // 2 + 1), random.randint(0, images.shape[0] // 2 + 1)
+
         for i in range(len(cv_images)):
-            cv_images[i] = cv2.copyMakeBorder(cv_images[i], top, bottom, left, right,
-                                              cv2.BORDER_CONSTANT, value=color)
+            padding = random.choice([cv2.BORDER_REPLICATE, cv2.BORDER_REFLECT, cv2.BORDER_REFLECT_101, cv2.BORDER_CONSTANT])
+            cv_images[i] = cv2.copyMakeBorder(cv_images[i], top, bottom, left, right, padding)
 
     images = func.perform_operation([Image.fromarray(cv_image) for cv_image in cv_images])
 
@@ -188,5 +189,4 @@ AUGMENT_FNS = {
     'rotate': rand_rotate,
     'zoom': rand_zoom,
     #'cutout': rand_cutout,
-
 }
