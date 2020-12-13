@@ -145,6 +145,9 @@ def rand_flip(x):
     return tf.cast(tranform(Flip(probability=1, top_bottom_left_right="RANDOM"), x.numpy()),
                    tf.float32)
 
+def left_right_flip(x):
+    return tf.cast(tranform(Flip(probability=1, top_bottom_left_right="LEFT_RIGHT"), x.numpy()),
+                   tf.float32)
 
 def skitch(x):
     return tf.cast(tranform(Skitch(probability=1), x.numpy()), tf.float32)
@@ -172,14 +175,18 @@ AUGMENT_FNS = {
     'patch': rand_patch,
     'distort': rand_distort,
     'flip': rand_flip,
+    'lr_flip': left_right_flip,
     'brightness': rand_brightness,
     'saturation': rand_saturation,
     'contrast': rand_contrast,
     #'skitch': skitch,
-    'colorize': rand_colorize,
+    'colorize1': rand_colorize,
+    'colorize2': rand_colorize,
+    'colorize3': rand_colorize,
     'skew': rand_skew,
     'shear': rand_shear,
     'rotate': rand_rotate,
     'zoom': rand_zoom,
     #'cutout': rand_cutout,
+
 }
