@@ -1,9 +1,5 @@
 import random
-import cv2
-import numpy as np
 from Augmentor.Operations import Operation
-from PIL import Image
-
 
 class Patcher(Operation):
     """
@@ -34,16 +30,23 @@ class Patcher(Operation):
         """
 
         def do(image):
-            source_im = image if augmented_images == [] else random.choice(augmented_images)
-            start = [source_im.size[0] // random.randint(1, 5), source_im.size[0] // random.randint(1, 5)]
-            e1 = source_im.size[0] // random.randint(1, 5)
-            e2 = source_im.size[0] // random.randint(1, 5)
-            end = [min(start[0] + e1, source_im.size[0]), min(start[1] + e1, source_im.size[0])]
-            region = source_im.crop([*start, *end])
+            done = False
+            while not done:
+                try:
+                    source_im = image if augmented_images == [] else random.choice(augmented_images)
+                    start = [source_im.size[0] // random.randint(1, 5), source_im.size[0] // random.randint(1, 5)]
+                    e1 = source_im.size[0] // random.randint(1, 5)
+                    e2 = source_im.size[0] // random.randint(1, 5)
+                    end = [min(start[0] + e1, source_im.size[0]), min(start[1] + e2, source_im.size[0])]
+                    region = source_im.crop([*start, *end])
 
-            start2 = [image.size[0] // random.randint(1, 5), image.size[0] // random.randint(1, 5)]
-            end2 = [min(start2[0] + e1, image.size[0]), min(start2[1] + e1, image.size[0])]
-            image.paste(region, [*start2, *end2])
+                    start2 = [image.size[0] // random.randint(1, 5), image.size[0] // random.randint(1, 5)]
+                    end2 = [min(start2[0] + e1, image.size[0]), min(start2[1] + e2, image.size[0])]
+                    image.paste(region, [*start2, *end2])
+                    done=True
+                except:
+                    pass
+
             return image
 
         augmented_images = []
