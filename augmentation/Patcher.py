@@ -43,7 +43,7 @@ class Patcher(Operation):
 
             start2 = [image.size[0] // random.randint(1, 5), image.size[0] // random.randint(1, 5)]
             end2 = [min(start2[0] + e1, image.size[0]), min(start2[1] + e1, image.size[0])]
-            image.paste(region, [*start, *end])
+            image.paste(region, [*start2, *end2])
             return image
 
         augmented_images = []
