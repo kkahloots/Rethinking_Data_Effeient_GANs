@@ -28,7 +28,7 @@ def DiffAugmentPlus(x, level=1):
             for _ in range(level):
                 fns += [AUGMENT_FNS[random.choice([*AUGMENT_FNS.keys()])]]
             for f in fns:
-                print(f)
+                #print(f)
                 x = f(x)
             aug_x = 1
         except:
