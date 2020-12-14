@@ -201,7 +201,6 @@ AUGMENT_FNS = {
     'colorize1': rand_colorize,
     'colorize2': rand_colorize,
     'colorize3': rand_colorize,
-    'colorize4': rand_colorize,
     'skew': rand_skew,
     'shear': rand_shear,
     'rotate': rand_rotate,
