@@ -173,8 +173,8 @@ def rand_rotate_stand(x):
                             x.numpy()), tf.float32)
 
 def rand_zoom(x):
-    return tf.cast(tranform(Zoom(probability=1, min_factor=random.randint(2, 10) / 10,
-                                         max_factor=random.randint(10, 12) / 10), x.numpy()), tf.float32)
+    return tf.cast(tranform(Zoom(probability=1, min_factor=random.randint(5, 10) // 10,
+                                         max_factor=random.randint(10, 15) // 10), x.numpy()), tf.float32)
 
 
 def rand_patch(x):
