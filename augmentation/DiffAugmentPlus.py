@@ -38,20 +38,20 @@ def DiffAugmentPlus(x, level=1):
 
 
 def rand_brightness(x):
-    magnitude = tf.random.uniform([tf.shape(x)[0], 1, 1, 1]) - 0.5
+    magnitude = tf.random.uniform([tf.shape(x)[0]//2, 1, 1, 1]) - 0.5
     x = x + magnitude
     return x
 
 
 def rand_saturation(x):
-    magnitude = tf.random.uniform([tf.shape(x)[0], 1, 1, 1]) * 2
+    magnitude = tf.random.uniform([tf.shape(x)[0]//2, 1, 1, 1]) * 2
     x_mean = tf.reduce_mean(x, axis=3, keepdims=True)
     x = (x - x_mean) * magnitude + x_mean
     return x
 
 
 def rand_contrast(x):
-    magnitude = tf.random.uniform([tf.shape(x)[0], 1, 1, 1]) + 0.5
+    magnitude = tf.random.uniform([tf.shape(x)[0]//2, 1, 1, 1]) + 0.5
     x_mean = tf.reduce_mean(x, axis=[1, 2, 3], keepdims=True)
     x = (x - x_mean) * magnitude + x_mean
     return x
