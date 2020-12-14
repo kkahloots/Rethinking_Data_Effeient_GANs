@@ -35,11 +35,7 @@ class Colorize(Operation):
 
         def do(image):
             t_image = None
-            flags = set([eval('cv2.{}'.format(i)) for i in dir(cv2) if i.startswith('COLOR_')])
-            flags = [f for f in flags if
-                     f not in list(range(6, 32)) + list(range(36, 40)) + [106, 44, 45, 70, 98, 122] + list(range(50, 58)) + \
-                     list(range(62, 68)) +\
-                     list(range(74, 80)) + list(range(82, 86)) + list(range(126, 135))]
+            flags = sorted(list(range(0,8)) + list(range(32, 36)) + list(range(60, 62)) + list(range(72, 74)) + list(range(10, 12)) )
 
             while t_image is None:
                 f = random.choice(flags)
