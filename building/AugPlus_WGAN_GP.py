@@ -26,12 +26,13 @@ import building.ops as ops
 from utils.utils import img_merge
 from utils.utils import pbar, vbar
 from utils.utils import save_image_grid
-from augmentation.DiffAugmentPlus import Augment
+from augmentation.DiffAugmentPlus import DiffAugmentPlus
 
 class AugmentPlus_WGAN_GP:
     def __init__(self,
                  model_name,
                  image_size,
+                 aug_level=4,
                  save_path=None,
                  batch_size=36,
                  z_dim=256,
@@ -44,6 +45,7 @@ class AugmentPlus_WGAN_GP:
         self.save_path = save_path
         self.z_dim = z_dim
         self.batch_size = batch_size
+        self.aug_level = aug_level
         self.image_size = image_size
         self.n_critic = n_critic
         self.grad_penalty_weight = g_penalty
@@ -158,7 +160,7 @@ class AugmentPlus_WGAN_GP:
         z = random.normal((self.batch_size, 1, 1, self.z_dim))
         with tf.GradientTape() as t:
             x_fake = self.G(z, training=True)
-            fake_logits = self.D(Augment(x_fake, epoch=epoch), training=True)
+            fake_logits = self.D(DiffAugmentPlus(x_fake, level=self.aug_level), training=True)
             loss = ops.g_loss_fn(fake_logits)
         grad = t.gradient(loss, self.G.trainable_variables)
         self.g_opt.apply_gradients(zip(grad, self.G.trainable_variables))
@@ -169,8 +171,8 @@ class AugmentPlus_WGAN_GP:
         z = random.normal((self.batch_size, 1, 1, self.z_dim))
         with tf.GradientTape() as t:
             x_fake = self.G(z, training=True)
-            fake_logits = self.D(Augment(x_fake, epoch=epoch), training=True)
-            real_logits = self.D(Augment(x_real, epoch=epoch), training=True)
+            fake_logits = self.D(DiffAugmentPlus(x_fake, level=self.aug_level), training=True)
+            real_logits = self.D(DiffAugmentPlus(x_real, level=self.aug_level), training=True)
             cost = ops.d_loss_fn(fake_logits, real_logits)
             gp = self.gradient_penalty(partial(self.D, training=True), x_real, x_fake)
             cost += self.grad_penalty_weight * gp
