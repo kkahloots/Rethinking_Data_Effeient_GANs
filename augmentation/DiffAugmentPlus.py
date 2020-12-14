@@ -3,14 +3,14 @@ import random
 import cv2
 import numpy as np
 import tensorflow as tf
-from Augmentor.Operations import Skew, Distort, Shear, Flip, Zoom
-from PIL import Image, ImageChops
+from Augmentor.Operations import Skew, Distort, Shear, Flip, Zoom, Rotate, RotateStandard
+from PIL import Image
 
 from augmentation.Cloner import Clone
 from augmentation.Colorizer import Colorize
 from augmentation.Skitcher import Skitch
 from augmentation.Patcher import Patcher
-from augmentation.Rotate import Rotate
+from augmentation.Rotate_Zoom import RotateZoom
 
 cycle_epoch = int(1e4)
 max_level = 5
@@ -159,6 +159,19 @@ def rand_rotate(x):
                             x.numpy()), tf.float32)
 
 
+def rand_rotateZoom(x):
+    return tf.cast(tranform(RotateZoom(probability=1, rotation=random.randint(1, 360)),
+                            x.numpy()), tf.float32)
+
+
+def rand_rotate(x):
+    return tf.cast(tranform(Rotate(probability=1, rotation=random.randint(1, 360)),
+                            x.numpy()), tf.float32)
+
+def rand_rotate_stand(x):
+    return tf.cast(tranform(RotateStandard(probability=1, max_left_rotation=random.randint(1, 360), max_right_rotation=random.randint(1, 360), expand=False),
+                            x.numpy()), tf.float32)
+
 def rand_zoom(x):
     return tf.cast(tranform(Zoom(probability=1, min_factor=random.randint(2, 10) / 10,
                                          max_factor=random.randint(10, 12) / 10), x.numpy()), tf.float32)
@@ -173,10 +186,14 @@ AUGMENT_FNS = {
     'clone2': clone,
     'clone3': clone,
     'clone4': clone,
+    'clone5': clone,
     'patch': rand_patch,
     'distort': rand_distort,
     'flip': rand_flip,
+    'flip1': rand_flip,
     'lr_flip': left_right_flip,
+    'lr_flip1': left_right_flip,
+    'lr_flip2': left_right_flip,
     'brightness': rand_brightness,
     'saturation': rand_saturation,
     'contrast': rand_contrast,
@@ -184,9 +201,12 @@ AUGMENT_FNS = {
     'colorize1': rand_colorize,
     'colorize2': rand_colorize,
     'colorize3': rand_colorize,
+    'colorize4': rand_colorize,
     'skew': rand_skew,
     'shear': rand_shear,
     'rotate': rand_rotate,
+    'rotateStand': rand_rotate_stand,
+    'rotateZoom': rand_rotateZoom,
     'zoom': rand_zoom,
     #'cutout': rand_cutout,
 }

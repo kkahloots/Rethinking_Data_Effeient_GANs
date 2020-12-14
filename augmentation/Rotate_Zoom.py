@@ -3,7 +3,7 @@ import random
 from PIL import Image
 from math import floor, ceil
 
-class Rotate(Operation):
+class RotateZoom(Operation):
     """
     This class is used to perform rotations on images in multiples of 90
     degrees. Arbitrary rotations are handled by the :class:`RotateRange`
