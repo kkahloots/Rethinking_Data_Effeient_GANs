@@ -34,8 +34,8 @@ from tqdm.autonotebook import tqdm
 
 
 def img_merge(images, n_rows=None, n_cols=None, padding=0, pad_value=0):
-    images = (tf.cast(images, tf.float32) + 1.0) * 127.5
-    images = np.array(images)
+    #images = (tf.cast(images, tf.float32) + 1.0) * 127.5
+    images = np.array(images*255)
     n = images.shape[0]
 
     if n_rows:

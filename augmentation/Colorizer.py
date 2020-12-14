@@ -21,6 +21,7 @@ class Colorize(Operation):
         :type probability: Float
         :type scale_factor: Float
         """
+        self.flags = sorted(list(range(0,8)) + list(range(32, 36)) + list(range(60, 62)) + list(range(72, 74)) + list(range(10, 12)) )
         Operation.__init__(self, probability)
 
     def perform_operation(self, images):
@@ -35,10 +36,8 @@ class Colorize(Operation):
 
         def do(image):
             t_image = None
-            flags = sorted(list(range(0,8)) + list(range(32, 36)) + list(range(60, 62)) + list(range(72, 74)) + list(range(10, 12)) )
-
             while t_image is None:
-                f = random.choice(flags)
+                f = random.choice(self.flags)
                 if isinstance(image, Image.Image):
                     image = np.array(image)
                 try:
