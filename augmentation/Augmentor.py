@@ -103,19 +103,19 @@ def shift_random(x):
     if scale:
         x *= 255
 
-    r = random.randint(50, 125) / 1000
+    r = random.randint(80, 120) / 1000
     x = pres_aug.rand_shift(x, ratio=r)
     if scale:
         x /= 255
     return x
 
 
-def translate_left_right_random(x):
+def shear_left_right_random(x):
     scale = tf.reduce_max(x).numpy() <= 1.0
     if scale:
         x *= 255
 
-    l = random.randint(50, 125) / 1000
+    l = random.randint(80, 120) / 1000
     x = trans_aug.shear_left_right(x, shear_lambda=l)
     if scale:
         x /= 255
@@ -127,55 +127,166 @@ def translate_top_down_random(x):
     if scale:
         x *= 255
 
-    l = random.randint(50, 125) / 1000
+    l = random.randint(80, 120) / 1000
     x = trans_aug.shear_top_down(x, shear_lambda=l)
     if scale:
         x /= 255
     return x
 
 
-def translate_right_left_random(x):
+def shear_right_left_random(x):
     scale = tf.reduce_max(x).numpy() <= 1.0
     if scale:
         x *= 255
 
-    l = random.randint(50, 125) / 1000
+    l = random.randint(80, 120) / 1000
     x = trans_aug.shear_left_right(x, shear_lambda=-l)
     if scale:
         x /= 255
     return x
 
-
-def translate_down_top_random(x):
+def shear_down_top_random(x):
     scale = tf.reduce_max(x).numpy() <= 1.0
     if scale:
         x *= 255
 
-    l = random.randint(50, 125) / 1000
+    l = random.randint(80, 120) / 1000
+    x = trans_aug.shear_down_top(x, shear_lambda=-l)
+    if scale:
+        x /= 255
+    return x
+
+def shear_top_down_random(x):
+    scale = tf.reduce_max(x).numpy() <= 1.0
+    if scale:
+        x *= 255
+
+    l = random.randint(80, 120) / 1000
     x = trans_aug.shear_top_down(x, shear_lambda=-l)
     if scale:
         x /= 255
     return x
 
-def translate_skew_random(x):
+def skew_left_right_random(x):
     scale = tf.reduce_max(x).numpy() <= 1.0
     if scale:
         x *= 255
 
-    ll = random.randint(50, 125) / 1000 * random.choice([1,-1])
-    lr = random.randint(50, 125) / 1000 * random.choice([1,-1])
+    ll = random.randint(80, 120) / 1000
+    lr = random.randint(80, 120) / 1000
     x = trans_aug.skew_left_right(x, l_shear_lambda=ll, r_shear_lambda=lr)
 
     if scale:
         x /= 255
     return x
 
-photo_aug_list = [clone, clone, add_additive_shade, add_random_brightness, add_random_contrast, add_random_saturation]
-distort_aug_list = [clone, distort_random, distort_random, distort_random, distort_random, distort_random]
-mirror_aug_list = [clone, flip_left_right, flip_left_right, flip_left_right, flip_left_right, flip_left_right]
-pres_aug_list = [clone, shift_random, shift_random, shift_random, shift_random, shift_random]
-color_aug_list = [clone, transform_color_space, transform_color_space, transform_color_space, transform_color_space, transform_color_space]
-trans_aug_list = [clone, translate_top_down_random, translate_left_right_random, translate_down_top_random, translate_right_left_random, translate_skew_random]
+
+def skew_top_left_random(x):
+    scale = tf.reduce_max(x).numpy() <= 1.0
+    if scale:
+        x *= 255
+
+    lt = random.randint(80, 120) / 1000
+    ll = random.randint(80, 120) / 1000
+    x = trans_aug.skew_top_left(x, t_shear_lambda=lt, l_shear_lambda=ll)
+
+    if scale:
+        x /= 255
+    return x
+
+def skew_down_left(x):
+    scale = tf.reduce_max(x).numpy() <= 1.0
+    if scale:
+        x *= 255
+
+    lt = random.randint(80, 120) / 1000 * -1
+    ll = random.randint(80, 120) / 1000
+    x = trans_aug.skew_top_left(x, t_shear_lambda=lt, l_shear_lambda=ll)
+
+    if scale:
+        x /= 255
+    return x
+
+
+def shear_top_right(x):
+    scale = tf.reduce_max(x).numpy() <= 1.0
+    if scale:
+        x *= 255
+
+    lt = random.randint(80, 120) / 1000 * -1
+    ll = random.randint(80, 120) / 1000 * -1
+    x = trans_aug.shear_left_down(x, t_shear_lambda=lt, l_shear_lambda=ll)
+
+    if scale:
+        x /= 255
+    return x
+
+
+def shear_left_down(x):
+    scale = tf.reduce_max(x).numpy() <= 1.0
+    if scale:
+        x *= 255
+
+    lt = random.randint(80, 120) / 1000
+    ll = random.randint(80, 120) / 1000
+    x = trans_aug.shear_left_down(x, t_shear_lambda=lt, l_shear_lambda=ll)
+
+    if scale:
+        x /= 255
+    return x
+
+
+def skew_left_top_random(x):
+    scale = tf.reduce_max(x).numpy() <= 1.0
+    if scale:
+        x *= 255
+
+    lt = random.randint(80, 120) / 1000
+    ll = random.randint(80, 120) / 1000
+    x = trans_aug.skew_left_top(x, t_shear_lambda=lt, l_shear_lambda=ll)
+
+    if scale:
+        x /= 255
+    return x
+
+
+def skew_top_down_random(x):
+    scale = tf.reduce_max(x).numpy() <= 1.0
+    if scale:
+        x *= 255
+
+    ll = random.randint(80, 120) / 1000
+    lr = random.randint(80, 120) / 1000
+    x = trans_aug.skew_top_down(x, t_shear_lambda=ll, d_shear_lambda=lr)
+
+    if scale:
+        x /= 255
+    return x
+
+
+photo_aug_list = [clone, add_additive_shade, add_random_brightness, add_random_contrast, \
+                         add_random_saturation, add_additive_shade, add_random_brightness,
+                         clone, add_random_contrast, add_random_saturation]
+
+distort_aug_list = [clone, distort_random, distort_random, distort_random, \
+                           distort_random, distort_random, distort_random, \
+                           distort_random, distort_random, distort_random]
+
+mirror_aug_list = [clone, flip_left_right, flip_left_right, flip_left_right, \
+                          flip_left_right, flip_left_right, flip_left_right, \
+                          flip_left_right, flip_left_right, flip_left_right]
+
+pres_aug_list = [clone, shift_random, shift_random, shift_random, \
+                        shift_random, shift_random, shift_random, \
+                        shift_random, shift_random, shift_random]
+
+color_aug_list = [clone, transform_color_space, transform_color_space, transform_color_space, \
+                         transform_color_space, transform_color_space, transform_color_space, \
+                         transform_color_space, transform_color_space, transform_color_space]
+
+trans_aug_list = [clone, shear_top_down_random, shear_left_right_random, shear_down_top_random, \
+                         shear_right_left_random, skew_left_right_random, skew_top_down_random, \
+                         skew_top_left_random, skew_left_top_random, skew_down_left, shear_left_down, shear_top_right ]
 
 
 
