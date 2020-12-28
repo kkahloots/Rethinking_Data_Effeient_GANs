@@ -9,6 +9,7 @@ import augmentation.Perspective as pres_aug
 import augmentation.Photometric as photo_aug
 import augmentation.Translation as trans_aug
 
+scales = [a/100 for a in range(80, 121)]
 
 def clone(x):
     return x
@@ -103,7 +104,7 @@ def shift_random(x):
     if scale:
         x *= 255
 
-    r = random.randint(80, 120) / 1000
+    r = random.choice(scales)
     x = pres_aug.rand_shift(x, ratio=r)
     if scale:
         x /= 255
@@ -115,7 +116,7 @@ def shear_left_right_random(x):
     if scale:
         x *= 255
 
-    l = random.randint(80, 120) / 1000
+    l = random.choice(scales)
     x = trans_aug.shear_left_right(x, shear_lambda=l)
     if scale:
         x /= 255
@@ -127,7 +128,7 @@ def translate_top_down_random(x):
     if scale:
         x *= 255
 
-    l = random.randint(80, 120) / 1000
+    l = random.choice(scales)
     x = trans_aug.shear_top_down(x, shear_lambda=l)
     if scale:
         x /= 255
@@ -139,7 +140,7 @@ def shear_right_left_random(x):
     if scale:
         x *= 255
 
-    l = random.randint(80, 120) / 1000
+    l = random.choice(scales)
     x = trans_aug.shear_left_right(x, shear_lambda=-l)
     if scale:
         x /= 255
@@ -150,7 +151,7 @@ def shear_down_top_random(x):
     if scale:
         x *= 255
 
-    l = random.randint(80, 120) / 1000
+    l = random.choice(scales)
     x = trans_aug.shear_down_top(x, shear_lambda=-l)
     if scale:
         x /= 255
@@ -161,7 +162,7 @@ def shear_top_down_random(x):
     if scale:
         x *= 255
 
-    l = random.randint(80, 120) / 1000
+    l = random.choice(scales)
     x = trans_aug.shear_top_down(x, shear_lambda=-l)
     if scale:
         x /= 255
@@ -172,8 +173,8 @@ def skew_left_right_random(x):
     if scale:
         x *= 255
 
-    ll = random.randint(80, 120) / 1000
-    lr = random.randint(80, 120) / 1000
+    ll = random.choice(scales)
+    lr = random.choice(scales)
     x = trans_aug.skew_left_right(x, l_shear_lambda=ll, r_shear_lambda=lr)
 
     if scale:
@@ -186,8 +187,8 @@ def skew_top_left_random(x):
     if scale:
         x *= 255
 
-    lt = random.randint(80, 120) / 1000
-    ll = random.randint(80, 120) / 1000
+    lt = random.choice(scales)
+    ll = random.choice(scales)
     x = trans_aug.skew_top_left(x, t_shear_lambda=lt, l_shear_lambda=ll)
 
     if scale:
@@ -199,8 +200,8 @@ def skew_down_left(x):
     if scale:
         x *= 255
 
-    lt = random.randint(80, 120) / 1000 * -1
-    ll = random.randint(80, 120) / 1000
+    lt = random.choice(scales) * -1
+    ll = random.choice(scales)
     x = trans_aug.skew_top_left(x, t_shear_lambda=lt, l_shear_lambda=ll)
 
     if scale:
@@ -213,8 +214,8 @@ def shear_top_right(x):
     if scale:
         x *= 255
 
-    lt = random.randint(80, 120) / 1000 * -1
-    ll = random.randint(80, 120) / 1000 * -1
+    lt = random.choice(scales) * -1
+    ll = random.choice(scales) * -1
     x = trans_aug.shear_left_down(x, t_shear_lambda=lt, l_shear_lambda=ll)
 
     if scale:
@@ -227,8 +228,8 @@ def shear_left_down(x):
     if scale:
         x *= 255
 
-    lt = random.randint(80, 120) / 1000
-    ll = random.randint(80, 120) / 1000
+    lt = random.choice(scales)
+    ll = random.choice(scales)
     x = trans_aug.shear_left_down(x, t_shear_lambda=lt, l_shear_lambda=ll)
 
     if scale:
@@ -241,8 +242,8 @@ def skew_left_top_random(x):
     if scale:
         x *= 255
 
-    lt = random.randint(80, 120) / 1000
-    ll = random.randint(80, 120) / 1000
+    lt = random.choice(scales)
+    ll = random.choice(scales)
     x = trans_aug.skew_left_top(x, t_shear_lambda=lt, l_shear_lambda=ll)
 
     if scale:
@@ -255,8 +256,8 @@ def skew_top_down_random(x):
     if scale:
         x *= 255
 
-    ll = random.randint(80, 120) / 1000
-    lr = random.randint(80, 120) / 1000
+    ll = random.choice(scales)
+    lr = random.choice(scales)
     x = trans_aug.skew_top_down(x, t_shear_lambda=ll, d_shear_lambda=lr)
 
     if scale:
