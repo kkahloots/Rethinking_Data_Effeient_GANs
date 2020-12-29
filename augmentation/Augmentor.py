@@ -266,17 +266,17 @@ def skew_top_down_random(x):
     return x
 
 
-def resize_patches_random(x):
-    # scale = tf.reduce_max(x).numpy() <= 1.0
-    # if scale:
-    #     x *= 255
-
-    scales = [a / 100 for a in range(80, 120)]
-    x = td_pres_aug.resize_patches(x, scales)
-
-    # if scale:
-    #     x /= 255
-    return x
+# def resize_patches_random(x):
+#     # scale = tf.reduce_max(x).numpy() <= 1.0
+#     # if scale:
+#     #     x *= 255
+#
+#     scales = [a / 100 for a in range(80, 120)]
+#     x = td_pres_aug.resize_patches(x, scales)
+#
+#     # if scale:
+#     #     x /= 255
+#     return x
 
 
 photo_aug_list = [clone, add_additive_shade, add_random_brightness, add_random_contrast, \

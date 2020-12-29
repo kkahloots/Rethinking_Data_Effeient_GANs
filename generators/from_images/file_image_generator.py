@@ -66,7 +66,7 @@ def create_image_lists(image_dir, validation_pct, valid_imgae_formats, max_num_i
     sub_dirs = [x[0] for x in os.walk(image_dir)]
 
     sub_dirs_without_root = sub_dirs[1:]  # first element is root directory
-    sub_dirs_without_root = sorted(sub_dirs_without_root, key=lambda x: int(x.split(os.sep)[-1]))
+    sub_dirs_without_root = sorted(sub_dirs_without_root, key=lambda x: str(x.split(os.sep)[-1]))
 
     for sub_dir in sub_dirs_without_root:
         file_list = []

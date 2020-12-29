@@ -3,7 +3,7 @@ import imutils
 import random
 import numpy as np
 import tensorflow as tf
-
+import augmentation.Perspective as pres_aug
 
 def _sample_ROI(image):
     bg = image.copy()
@@ -50,7 +50,7 @@ def _color_bg(image, bg, ROIs):
         bg[ix] = cv2.GaussianBlur(np.expand_dims(bg[ix], 0), (s, s), 0, 0)
     return bg
 
-def _resize_ROIs(image, bg, ROIs, scales):
+def _resize_place_ROIs(image, bg, ROIs, scales):
     for x, y, w, h, approx in ROIs:
         mask = np.zeros(bg.shape[:2], np.uint8)
         cv2.drawContours(mask, [cv2.convexHull(approx)], -1, (255, 255, 255), -1, cv2.LINE_AA)
@@ -75,6 +75,7 @@ def _resize_ROIs(image, bg, ROIs, scales):
         bg[ix] = padded_scaled[ix]
     return bg
 
+
 def resize_patches(images, scales):
 
     def _py_resize_patches(images, scales):
@@ -83,10 +84,46 @@ def resize_patches(images, scales):
         for image in images:
             ROIs_sample = _sample_ROI(image)
             bg = _color_bg(image, image.copy(), ROIs_sample)
-            bg = _resize_ROIs(image, bg, ROIs_sample, scales)
+            bg = _resize_place_ROIs(image, bg, ROIs_sample, scales)
 
             bgs += [bg]
         return bgs
 
     resized = tf.py_function(_py_resize_patches, [images, scales], tf.float32)
     return tf.reshape(resized, tf.shape(images))
+
+
+def rotate_bg_patches(images, angle):
+
+    def _py_detect_patches(images, angle):
+        images = images.numpy()
+        bgs = []
+        for image in images:
+            ROIs_sample = _sample_ROI(image)
+            bg = _color_bg(image, image.copy(), ROIs_sample)
+            bg = pres_aug.rotate(tf.expand_dims(bg, 0), angles=angle).numpy()[0]
+            bg = _resize_place_ROIs(image, bg, ROIs_sample, [1])
+
+            bgs += [bg]
+        return bgs
+
+    rotated = tf.py_function(_py_detect_patches, [images, angle], tf.float32)
+    return tf.reshape(rotated, tf.shape(images))
+
+
+def shift_bg_patches(images, ratio):
+
+    def _py_detect_patches(images, ratio):
+        images = images.numpy()
+        bgs = []
+        for image in images:
+            ROIs_sample = _sample_ROI(image)
+            bg = _color_bg(image, image.copy(), ROIs_sample)
+            bg = pres_aug.rand_shift(tf.expand_dims(bg, 0), ratio=ratio).numpy()[0]
+            bg = _resize_place_ROIs(image, bg, ROIs_sample, [1])
+
+            bgs += [bg]
+        return bgs
+
+    shifted = tf.py_function(_py_detect_patches, [images, ratio], tf.float32)
+    return tf.reshape(shifted, tf.shape(images))
