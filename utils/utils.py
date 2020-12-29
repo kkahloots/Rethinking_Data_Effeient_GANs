@@ -34,8 +34,7 @@ from tqdm.autonotebook import tqdm
 
 
 def img_merge(images, n_rows=None, n_cols=None, padding=0, pad_value=0):
-    #images = (tf.cast(images, tf.float32) + 1.0) * 127.5
-    images = np.array(images*255)
+    #images = np.array(images)
     n = images.shape[0]
 
     if n_rows:
@@ -60,7 +59,7 @@ def img_merge(images, n_rows=None, n_cols=None, padding=0, pad_value=0):
         img[j * (h + padding):j * (h + padding) + h, i * (w + padding):i *
             (w + padding) + w, ...] = image
 
-    return img
+    return img.astype(np.uint8)
 
 
 def save_image_grid(img_grid, epoch, model_name, output_dir):
