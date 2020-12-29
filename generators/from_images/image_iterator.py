@@ -46,7 +46,7 @@ class ImageIterator(Iterator):
                  image_lists,
                  image_data_generator,
                  category, image_dir,
-                 target_size=(256, 256, 3),
+                 image_shape=(256, 256, 3),
                  color_mode='rgb',
                  class_mode='categorical',
                  batch_size=32,
@@ -83,17 +83,17 @@ class ImageIterator(Iterator):
         self.classes = np.zeros((self.samples,), dtype='int32')
 
         self.image_data_generator = image_data_generator
-        self.target_size = tuple(target_size)
+        #self.target_size = tuple(target_size)
         if color_mode not in {'rgb', 'grayscale'}:
             raise ValueError('Invalid color mode:', color_mode,
                              '; expected "rgb" or "grayscale".')
         self.color_mode = color_mode
         self.data_format = data_format
-        self.image_shape = self.target_size
+        self.image_shape = image_shape
         if self.data_format == 'jpeg':
-            self.decode_fun = tf.image.decode_jpeg
+            self.read_image = lambda x: tf.image.resize(tf.image.decode_jpeg(tf.io.read_file(x), channels=3), self.image_shape[:2])
         else:
-            self.decode_fun = tf.image.decode_png
+            self.read_image = lambda x: tf.image.resize(tf.image.decode_png(tf.io.read_file(x), channels=3), self.image_shape[:2])
 
         if (class_mode not in {'categorical', 'binary', 'sparse', 'episode', 'episode_flat', None}) and (not hasattr(class_mode, '__call__')):
             raise ValueError('Invalid class_mode:', class_mode,
@@ -159,12 +159,12 @@ class ImageIterator(Iterator):
 
                 imgs = []
                 for ix in range(j, j+self.episode_len):
-                    imgs += [self.decode_fun(tf.io.read_file(sorted_filenames[ix]), channels=3)]
+                    imgs += [self.read_image(sorted_filenames[ix])]
                 batch_x[i] = tf.stack(imgs)
 
                 imgs = []
                 for ix in range(j+self.episode_shift, j+self.episode_len+self.episode_shift):
-                    imgs += [self.decode_fun(tf.io.read_file(sorted_filenames[ix]), channels=3)]
+                    imgs += [self.read_image(sorted_filenames[ix])]
 
                 batch_gt += tf.stack(imgs)
             return tf.stack(batch_x), tf.stack(batch_gt)
@@ -189,14 +189,14 @@ class ImageIterator(Iterator):
 
                 imgs = []
                 for ix in range(j, j + self.episode_len):
-                    imgs += [self.decode_fun(tf.io.read_file(sorted_filenames[ix]), channels=3)]
+                    imgs += [self.read_image(sorted_filenames[ix])]
 
                 batch_x += [tf.stack(imgs)]
 
                 imgs = []
                 for ix in range(j + self.episode_shift, j + self.episode_len + self.episode_shift):
 
-                    imgs += [self.decode_fun(tf.io.read_file(sorted_filenames[ix]), channels=3)]
+                    imgs += [self.read_image(sorted_filenames[ix])]
 
                 batch_gt += [tf.stack(imgs)]
             return tf.cast(tf.stack(batch_gt), tf.float32), tf.cast(tf.stack(batch_gt), tf.float32)
@@ -206,7 +206,7 @@ class ImageIterator(Iterator):
             # build batch of image data
             for i, j in enumerate(index_array):
 
-                imgs = self.decode_fun(tf.io.read_file(self.filenames[j]), channels=3)
+                imgs = self.read_image(self.filenames[j])
                 batch_x += [imgs]
 
             # optionally save augmented images to disk for debugging purposes

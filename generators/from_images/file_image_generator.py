@@ -16,7 +16,7 @@ class FileImageGenerator(ImageDataGenerator):
     def flow_from_image_lists(self, image_lists,
                               category,
                               image_dir,
-                              target_size,
+                              image_shape,
                               batch_size,
                               episode_len=None,
                               episode_shift=None,
@@ -31,7 +31,7 @@ class FileImageGenerator(ImageDataGenerator):
         return ImageIterator(image_lists, self,
                              category,
                              image_dir,
-                             target_size=target_size,
+                             image_shape=image_shape,
                              color_mode=color_mode,
                              class_mode=class_mode,
                              data_format=self.data_format,
@@ -135,7 +135,7 @@ def create_image_lists(image_dir, validation_pct, valid_imgae_formats, max_num_i
         }
     return image_lists
 
-def get_generators(images_list, image_dir, image_size, batch_size, class_mode, episode_len=None, episode_shift=None, scaler=255.0):
+def get_generators(images_list, image_dir, image_shape, batch_size, class_mode, episode_len=None, episode_shift=None, scaler=255.0):
 
     train_datagen = FileImageGenerator(rescale=1. / scaler)
 
@@ -145,7 +145,7 @@ def get_generators(images_list, image_dir, image_size, batch_size, class_mode, e
         image_lists=images_list,
         category='training',
         image_dir=image_dir,
-        target_size=image_size,
+        image_shape=image_shape,
         batch_size=batch_size,
         class_mode=class_mode,
         episode_len=episode_len,
@@ -156,7 +156,7 @@ def get_generators(images_list, image_dir, image_size, batch_size, class_mode, e
         image_lists=images_list,
         category='validation',
         image_dir=image_dir,
-        target_size=image_size,
+        image_shape=image_shape,
         batch_size=batch_size,
         class_mode=class_mode,
         episode_len=episode_len,
