@@ -8,6 +8,7 @@ import augmentation.Mirror as mirror_aug
 import augmentation.Perspective as pres_aug
 import augmentation.Photometric as photo_aug
 import augmentation.Translation as trans_aug
+import augmentation.ThreeD_Presective as td_pres_aug
 
 scales = [a/100 for a in range(80, 121)]
 
@@ -16,252 +17,265 @@ def clone(x):
 
 
 def add_random_brightness(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
     x = photo_aug.random_brightness(x, max_abs_change=100)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def add_random_contrast(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
     x = photo_aug.random_contrast(x)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def add_random_saturation(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
     x = photo_aug.random_saturation(x)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def add_additive_shade(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
     x = photo_aug.additive_shade(x)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def transform_color_space(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
     x = color_aug.color_space_transform(x)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def rotate_random(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
     a = random.randint(-35, 35)
     x = pres_aug.rotate(x, a)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def flip_left_right(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
     x = mirror_aug.flip_left_right(x)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def distort_random(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
     w = int(x.shape[0])
     n = random.randint(5, w // 5 + 1)
     s = random.randint(-5, 5)
     x = distort_aug.distort(x, num_anchors=w // n, perturb_sigma=s)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def shift_random(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     r = random.choice(scales)
     x = pres_aug.rand_shift(x, ratio=r)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def shear_left_right_random(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     l = random.choice(scales)
     x = trans_aug.shear_left_right(x, shear_lambda=l)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def translate_top_down_random(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     l = random.choice(scales)
     x = trans_aug.shear_top_down(x, shear_lambda=l)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def shear_right_left_random(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     l = random.choice(scales)
     x = trans_aug.shear_left_right(x, shear_lambda=-l)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 def shear_down_top_random(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     l = random.choice(scales)
     x = trans_aug.shear_down_top(x, shear_lambda=-l)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 def shear_top_down_random(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     l = random.choice(scales)
     x = trans_aug.shear_top_down(x, shear_lambda=-l)
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 def skew_left_right_random(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     ll = random.choice(scales)
     lr = random.choice(scales)
     x = trans_aug.skew_left_right(x, l_shear_lambda=ll, r_shear_lambda=lr)
 
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def skew_top_left_random(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     lt = random.choice(scales)
     ll = random.choice(scales)
     x = trans_aug.skew_top_left(x, t_shear_lambda=lt, l_shear_lambda=ll)
 
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 def skew_down_left(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     lt = random.choice(scales) * -1
     ll = random.choice(scales)
     x = trans_aug.skew_top_left(x, t_shear_lambda=lt, l_shear_lambda=ll)
 
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def shear_top_right(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     lt = random.choice(scales) * -1
     ll = random.choice(scales) * -1
     x = trans_aug.shear_left_down(x, t_shear_lambda=lt, l_shear_lambda=ll)
 
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def shear_left_down(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     lt = random.choice(scales)
     ll = random.choice(scales)
     x = trans_aug.shear_left_down(x, t_shear_lambda=lt, l_shear_lambda=ll)
 
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def skew_left_top_random(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     lt = random.choice(scales)
     ll = random.choice(scales)
     x = trans_aug.skew_left_top(x, t_shear_lambda=lt, l_shear_lambda=ll)
 
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
     return x
 
 
 def skew_top_down_random(x):
-    scale = tf.reduce_max(x).numpy() <= 1.0
-    if scale:
-        x *= 255
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
 
     ll = random.choice(scales)
     lr = random.choice(scales)
     x = trans_aug.skew_top_down(x, t_shear_lambda=ll, d_shear_lambda=lr)
 
-    if scale:
-        x /= 255
+    # if scale:
+    #     x /= 255
+    return x
+
+
+def resize_patches_random(x):
+    # scale = tf.reduce_max(x).numpy() <= 1.0
+    # if scale:
+    #     x *= 255
+
+    scales = [a / 100 for a in range(80, 120)]
+    x = td_pres_aug.resize_patches(x, scales)
+
+    # if scale:
+    #     x /= 255
     return x
 
 
