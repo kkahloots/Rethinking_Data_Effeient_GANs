@@ -198,20 +198,26 @@ pres_aug_list =  [clone, shift_random, shift_random, shift_random, \
                                          shift_random, shift_random, shift_random]
 
 
-augmentation_functions = list(itertools.product(photo_aug_list,
+augmentation_functions = list(set([ tuple(set(fn)) for fn in list(itertools.product(photo_aug_list,
                                                 distort_aug_list,
                                                 mirror_aug_list,
                                                 pres_aug_list + trans_aug_list,
                                                 color_aug_list
-                                                ))
+                                                ))]))
 
-nature_augmentation_functions = list(itertools.product(photo_aug_list,
+nature_augmentation_functions = list(set([ tuple(set(fn)) for fn in list(itertools.product(photo_aug_list,
                                                 distort_aug_list,
                                                 mirror_aug_list,
                                                 pres_aug_list, trans_aug_list,
                                                 color_aug_list
-                                                ))
+                                                ))]))
 
+augmentation3d_functions = list(set([ tuple(set(fn)) for fn in list(itertools.product(
+                                                photo_aug_list, color_aug_list,
+                                                distort_aug_list,
+                                                mirror_aug_list,
+                                                pres_aug_list + trans_aug_list
+                                                ))]))
 # augmentation_functions = {
 #     'mirror': flip_left_right,
 #     'random_brightness': add_random_brightness,

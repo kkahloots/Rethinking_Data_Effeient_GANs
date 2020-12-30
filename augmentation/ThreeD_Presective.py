@@ -3,6 +3,7 @@ import imutils
 import random
 import numpy as np
 import tensorflow as tf
+import copy
 import augmentation.Perspective as pres_aug
 
 def _sample_ROI(image):
@@ -25,7 +26,7 @@ def _sample_ROI(image):
     return ROIs_sample
 
 def _color_bg(image, bg, ROIs):
-    radius = bg.shape[0] // 2
+    radius = 10#bg.shape[0] // 2
     for x, y, w, h, approx in ROIs:
         mask = np.zeros(bg.shape[:2], np.uint8)
         cv2.drawContours(mask, [cv2.convexHull(approx)], -1, (255, 255, 255), -1, cv2.LINE_AA)
@@ -50,6 +51,7 @@ def _color_bg(image, bg, ROIs):
         bg[ix] = cv2.GaussianBlur(np.expand_dims(bg[ix], 0), (s, s), 0, 0)
     return bg
 
+
 def _resize_place_ROIs(image, bg, ROIs, scales):
     for x, y, w, h, approx in ROIs:
         mask = np.zeros(bg.shape[:2], np.uint8)
@@ -59,7 +61,7 @@ def _resize_place_ROIs(image, bg, ROIs, scales):
         ix = np.where(obj == 0)
         obj[ix] = 255
 
-        scale = (random.choice(scales), random.choice(scales))  # define your scale
+        scale = (float(random.choice(scales)), float(random.choice(scales)))  # define your scale
         scaled_obj = cv2.resize(obj[y:y + h, x:x + w], None, fx=scale[0], fy=scale[1])  # scale image
 
         ix = np.where(scaled_obj == 255)
@@ -73,57 +75,109 @@ def _resize_place_ROIs(image, bg, ROIs, scales):
 
         ix = np.where(padded_scaled != 0)
         bg[ix] = padded_scaled[ix]
+
+    #radius = bg.shape[0] // 2
+    #mask = np.zeros(bg.shape[:2], np.uint8)
+    #bg = cv2.inpaint(bg, mask, 3, flags=cv2.INPAINT_TELEA)
     return bg
 
 
-def resize_patches(images, scales):
+def _resize_place_ROIs_with_BB(image, bg, ROIs, scales):
+    for x, y, w, h, approx in ROIs:
+        mask = np.zeros(bg.shape[:2], np.uint8)
+        cv2.drawContours(mask, [cv2.convexHull(approx)], -1, (255, 255, 255), -1, cv2.LINE_AA)
+        obj = cv2.bitwise_and(image, image, mask=mask)
 
-    def _py_resize_patches(images, scales):
-        images = images.numpy()
+        ix = np.where(obj == 0)
+        obj[ix] = 255
+
+        scale = (float(random.choice(scales)), float(random.choice(scales)))  # define your scale
+        scaled_obj = cv2.resize(obj[y:y + h, x:x + w], None, fx=scale[0], fy=scale[1])  # scale image
+
+        ix = np.where(scaled_obj == 255)
+        scaled_obj[ix] = 0
+
+        sh, sw = scaled_obj.shape[:2]  # get h, w of scaled image
+
+        padded_scaled = np.zeros(bg.shape, dtype=np.uint8)  # using img.shape to obtain #channels
+        pw, ph, _ = padded_scaled[y:y + sh, x:x + sw].shape
+        padded_scaled[y:y + sh, x:x + sw] = cv2.resize(scaled_obj, (ph, pw))
+        ix = np.where(padded_scaled != 0)
+        bg[ix] = padded_scaled[ix]
+
+        cv2.rectangle(bg, (x, y), (x+sw, y+sh), (36, 255, 12), 1)
+
+    return bg
+
+#
+# def resize_patches(images, scales):
+#
+#     def _py_resize_patches(images, scales):
+#         images = images.numpy()
+#         bgs = []
+#         for image in images:
+#             ROIs_sample = _sample_ROI(image)
+#             bg = _color_bg(image, image.copy(), ROIs_sample)
+#             bg = _resize_place_ROIs(image, bg, ROIs_sample, scales)
+#
+#             bgs += [bg]
+#         return bgs
+#
+#     resized = tf.py_function(_py_resize_patches, [images, scales], tf.float32)
+#     return tf.reshape(resized, tf.shape(images))
+
+
+def aug_bg_patches(images, scales, aug_fun):
+
+    def _py_detect_patches(images, scales):
+        images = images.numpy().astype(np.uint8)
         bgs = []
         for image in images:
             ROIs_sample = _sample_ROI(image)
             bg = _color_bg(image, image.copy(), ROIs_sample)
+            bg = cv2.cvtColor(aug_fun(tf.expand_dims(bg, 0)).numpy()[0].astype(np.uint8), cv2.IMREAD_COLOR)
             bg = _resize_place_ROIs(image, bg, ROIs_sample, scales)
 
             bgs += [bg]
-        return bgs
+        return np.stack(bgs)
 
-    resized = tf.py_function(_py_resize_patches, [images, scales], tf.float32)
-    return tf.reshape(resized, tf.shape(images))
+    augmented = tf.py_function(_py_detect_patches, [images, scales], tf.float32)
+    return tf.reshape(augmented, tf.shape(images))
 
+def aug_bg_patches_demo(images, scales, aug_fun):
 
-def rotate_bg_patches(images, angle):
-
-    def _py_detect_patches(images, angle):
-        images = images.numpy()
+    def _py_detect_patches(images, scales):
+        images = images.numpy().astype(np.uint8)
         bgs = []
+        bgsBB = []
         for image in images:
             ROIs_sample = _sample_ROI(image)
             bg = _color_bg(image, image.copy(), ROIs_sample)
-            bg = pres_aug.rotate(tf.expand_dims(bg, 0), angles=angle).numpy()[0]
-            bg = _resize_place_ROIs(image, bg, ROIs_sample, [1])
+            bg = cv2.cvtColor(aug_fun(tf.expand_dims(bg, 0)).numpy()[0].astype(np.uint8), cv2.IMREAD_COLOR)
+            bgBB = _resize_place_ROIs_with_BB(image, bg.copy(), ROIs_sample, scales)
+            bg = _resize_place_ROIs(image, bg, ROIs_sample, scales)
 
             bgs += [bg]
-        return bgs
+            bgsBB += [bgBB]
+        return np.stack([bgs, bgsBB])
 
-    rotated = tf.py_function(_py_detect_patches, [images, angle], tf.float32)
-    return tf.reshape(rotated, tf.shape(images))
+    augmented = tf.py_function(_py_detect_patches, [images, scales], tf.float32)
+    return tf.reshape(augmented[0], tf.shape(images)), tf.reshape(augmented[1], tf.shape(images))
 
 
-def shift_bg_patches(images, ratio):
-
-    def _py_detect_patches(images, ratio):
-        images = images.numpy()
-        bgs = []
-        for image in images:
-            ROIs_sample = _sample_ROI(image)
-            bg = _color_bg(image, image.copy(), ROIs_sample)
-            bg = pres_aug.rand_shift(tf.expand_dims(bg, 0), ratio=ratio).numpy()[0]
-            bg = _resize_place_ROIs(image, bg, ROIs_sample, [1])
-
-            bgs += [bg]
-        return bgs
-
-    shifted = tf.py_function(_py_detect_patches, [images, ratio], tf.float32)
-    return tf.reshape(shifted, tf.shape(images))
+# def shift_bg_patches(images, ratio):
+#
+#     def _py_detect_patches(images, ratio):
+#         images = images.numpy()
+#         bgs = []
+#         for image in images:
+#             ROIs_sample = _sample_ROI(image)
+#             bg = _color_bg(image, image.copy(), ROIs_sample)
+#             bg = pres_aug.rand_shift(tf.expand_dims(bg, 0), ratio=ratio).numpy()[0]
+#             bg = _resize_place_ROIs(image, bg, ROIs_sample, [1])
+#
+#             bgs += [bg]
+#         return bgs
+#
+#     shifted = tf.py_function(_py_detect_patches, [images, ratio], tf.float32)
+#     return tf.reshape(shifted, tf.shape(images))
