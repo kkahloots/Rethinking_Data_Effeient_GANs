@@ -8,7 +8,7 @@ import augmentation.Mirror as mirror_aug
 import augmentation.Perspective as pres_aug
 import augmentation.Photometric as photo_aug
 import augmentation.Translation as trans_aug
-import augmentation.ThreeD_Presective as td_pres_aug
+import augmentation.ThreeDimension_Presective as td_pres_aug
 
 scales = [a/1000 for a in range(80, 121)]
 d_scales = [a/100 for a in range(150, 301)]

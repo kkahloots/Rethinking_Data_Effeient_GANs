@@ -3,8 +3,7 @@ import imutils
 import random
 import numpy as np
 import tensorflow as tf
-import copy
-import augmentation.Perspective as pres_aug
+
 
 def _sample_ROI(image):
     bg = image.copy()
@@ -27,6 +26,10 @@ def _sample_ROI(image):
 
 def _color_bg(image, bg, ROIs):
     radius = 10#bg.shape[0] // 2
+    #padding = 2
+    #top, bottom = padding, padding
+    #left, right = padding, padding
+
     for x, y, w, h, approx in ROIs:
         mask = np.zeros(bg.shape[:2], np.uint8)
         cv2.drawContours(mask, [cv2.convexHull(approx)], -1, (255, 255, 255), -1, cv2.LINE_AA)
@@ -34,21 +37,15 @@ def _color_bg(image, bg, ROIs):
         ix = np.where(obj != 0)
         bg[ix] = 255
 
+
+        #color = [255, 255, 255]
+        #h, w = obj.shape[:2]
+        #obj = cv2.resize(cv2.copyMakeBorder(obj, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color),\
+        #                 (h, w))
+
         mask = cv2.cvtColor(obj, cv2.COLOR_BGR2GRAY)
         bg = cv2.inpaint(bg, mask, radius, flags=cv2.INPAINT_TELEA)
 
-        s = min(h // 2, w // 2)
-        if s % 2 != 1:
-            s += 1
-
-        gamma = 0.5
-        lookUpTable = np.empty((1, 256), np.uint8)
-
-        for i in range(256):
-            lookUpTable[0, i] = np.clip(pow(i / 255.0, gamma) * 255.0, 0, 255)
-
-        bg[ix] = cv2.LUT(np.expand_dims(bg[ix], 0), lookUpTable)
-        bg[ix] = cv2.GaussianBlur(np.expand_dims(bg[ix], 0), (s, s), 0, 0)
     return bg
 
 
@@ -66,6 +63,11 @@ def _resize_place_ROIs(image, bg, ROIs, scales):
 
         ix = np.where(scaled_obj == 255)
         scaled_obj[ix] = 0
+
+        cv2.floodFill(scaled_obj, None, (0, 0), 0)
+        kernel = np.ones((3, 3), np.uint8)
+        scaled_obj = cv2.erode(scaled_obj, kernel, iterations=1)
+        scaled_obj = cv2.dilate(scaled_obj, kernel, iterations=1)
 
         sh, sw = scaled_obj.shape[:2]  # get h, w of scaled image
 
