@@ -13,7 +13,7 @@ def _sample_ROI(image):
 
     cnts = cv2.findContours(bg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
-    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:25]
+    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:10]
 
     ROIs = []
     for c in cnts[::-1]:
@@ -21,7 +21,7 @@ def _sample_ROI(image):
         approx = cv2.approxPolyDP(c, 0, True)
         ROIs.append([x, y, w, h, approx])
 
-    ROIs_sample = random.sample(ROIs, random.choice(range(min(5, len(ROIs)), len(ROIs) + 1)))
+    ROIs_sample = random.sample(ROIs, random.choice(range(1, len(ROIs) + 1)))
     return ROIs_sample
 
 def _color_bg(image, bg, ROIs):

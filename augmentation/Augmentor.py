@@ -9,9 +9,54 @@ import augmentation.Perspective as pres_aug
 import augmentation.Photometric as photo_aug
 import augmentation.Translation as trans_aug
 import augmentation.ThreeDimension_Presective as td_pres_aug
+import numpy as np
 
 scales = [a/1000 for a in range(80, 121)]
 d_scales = [a/100 for a in range(150, 301)]
+td_scales = [a/100 for a in range(80, 121)]
+
+
+def AugmentObject(x, td_prob=0.3):
+    aug_functions = np.random.choice([False, True], p=[1-td_prob, td_prob])
+    if aug_functions:
+        done = True
+        while done:
+            fn = random.choice(aug_functions)
+            if fn in photo_aug_list:
+                continue
+            else:
+                done = False
+        aug_patch_fn = lambda x: td_pres_aug.aug_bg_patches(x, td_scales, fn)
+        aug_functions = [aug_patch_fn if f==fn else f for f in augmentation3d_functions]
+    else:
+        aug_functions = augmentation_functions
+
+    for f in aug_functions:
+        x = f(x)
+
+    return x
+
+
+def AugmentNature(x, td_prob=0.3):
+    aug_functions = np.random.choice([False, True], p=[1-td_prob, td_prob])
+    if aug_functions:
+        done = True
+        while done:
+            fn = random.choice(aug_functions)
+            if fn in photo_aug_list:
+                continue
+            else:
+                done = False
+        aug_patch_fn = lambda x: td_pres_aug.aug_bg_patches(x, td_scales, fn)
+        aug_functions = [aug_patch_fn if f==fn else f for f in augmentation3d_functions]
+    else:
+        aug_functions = nature_augmentation_functions
+
+    for f in aug_functions:
+        x = f(x)
+
+    return x
+
 
 def clone(x):
     return x
