@@ -25,10 +25,7 @@ def _sample_ROI(image):
     return ROIs_sample
 
 def _color_bg(image, bg, ROIs):
-    radius = 10#bg.shape[0] // 2
-    #padding = 2
-    #top, bottom = padding, padding
-    #left, right = padding, padding
+    radius = 10 # bg.shape[0] // 2
 
     for x, y, w, h, approx in ROIs:
         mask = np.zeros(bg.shape[:2], np.uint8)
@@ -36,12 +33,6 @@ def _color_bg(image, bg, ROIs):
         obj = cv2.bitwise_and(image, image, mask=mask)
         ix = np.where(obj != 0)
         bg[ix] = 255
-
-
-        #color = [255, 255, 255]
-        #h, w = obj.shape[:2]
-        #obj = cv2.resize(cv2.copyMakeBorder(obj, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color),\
-        #                 (h, w))
 
         mask = cv2.cvtColor(obj, cv2.COLOR_BGR2GRAY)
         bg = cv2.inpaint(bg, mask, radius, flags=cv2.INPAINT_TELEA)
@@ -78,9 +69,6 @@ def _resize_place_ROIs(image, bg, ROIs, scales):
         ix = np.where(padded_scaled != 0)
         bg[ix] = padded_scaled[ix]
 
-    #radius = bg.shape[0] // 2
-    #mask = np.zeros(bg.shape[:2], np.uint8)
-    #bg = cv2.inpaint(bg, mask, 3, flags=cv2.INPAINT_TELEA)
     return bg
 
 
@@ -111,23 +99,6 @@ def _resize_place_ROIs_with_BB(image, bg, ROIs, scales):
 
     return bg
 
-#
-# def resize_patches(images, scales):
-#
-#     def _py_resize_patches(images, scales):
-#         images = images.numpy()
-#         bgs = []
-#         for image in images:
-#             ROIs_sample = _sample_ROI(image)
-#             bg = _color_bg(image, image.copy(), ROIs_sample)
-#             bg = _resize_place_ROIs(image, bg, ROIs_sample, scales)
-#
-#             bgs += [bg]
-#         return bgs
-#
-#     resized = tf.py_function(_py_resize_patches, [images, scales], tf.float32)
-#     return tf.reshape(resized, tf.shape(images))
-
 
 def aug_bg_patches(images, scales, aug_fun):
 
@@ -145,6 +116,7 @@ def aug_bg_patches(images, scales, aug_fun):
 
     augmented = tf.py_function(_py_detect_patches, [images, scales], tf.float32)
     return tf.reshape(augmented, tf.shape(images))
+
 
 def aug_bg_patches_demo(images, scales, aug_fun):
 
@@ -165,21 +137,3 @@ def aug_bg_patches_demo(images, scales, aug_fun):
 
     augmented = tf.py_function(_py_detect_patches, [images, scales], tf.float32)
     return tf.reshape(augmented[0], tf.shape(images)), tf.reshape(augmented[1], tf.shape(images))
-
-
-# def shift_bg_patches(images, ratio):
-#
-#     def _py_detect_patches(images, ratio):
-#         images = images.numpy()
-#         bgs = []
-#         for image in images:
-#             ROIs_sample = _sample_ROI(image)
-#             bg = _color_bg(image, image.copy(), ROIs_sample)
-#             bg = pres_aug.rand_shift(tf.expand_dims(bg, 0), ratio=ratio).numpy()[0]
-#             bg = _resize_place_ROIs(image, bg, ROIs_sample, [1])
-#
-#             bgs += [bg]
-#         return bgs
-#
-#     shifted = tf.py_function(_py_detect_patches, [images, ratio], tf.float32)
-#     return tf.reshape(shifted, tf.shape(images))
