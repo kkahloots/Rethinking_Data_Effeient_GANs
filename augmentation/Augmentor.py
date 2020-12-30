@@ -20,8 +20,8 @@ def AugmentObject(x, td_prob=0.3):
     aug_functions = np.random.choice([False, True], p=[1-td_prob, td_prob])
     if aug_functions:
         done = True
+        fn = random.choice(aug_functions)
         while done:
-            fn = random.choice(aug_functions)
             if fn in photo_aug_list:
                 continue
             else:
@@ -41,8 +41,8 @@ def AugmentNature(x, td_prob=0.3):
     aug_functions = np.random.choice([False, True], p=[1-td_prob, td_prob])
     if aug_functions:
         done = True
+        fn = random.choice(aug_functions)
         while done:
-            fn = random.choice(aug_functions)
             if fn in photo_aug_list:
                 continue
             else:
