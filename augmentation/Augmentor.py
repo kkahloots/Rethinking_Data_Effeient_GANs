@@ -27,7 +27,7 @@ def AugmentObject(images, td_prob=0.3, scale=255.0, batch_shape=None):
                 continue
             else:
                 done = False
-        aug_patch_fn = lambda x: td_pres_aug.aug_bg_patches(x, td_scales, fn)
+        aug_patch_fn = lambda images, batch_shape: td_pres_aug.aug_bg_patches(images, td_scales, fn, batch_shape)
         functions_list = [aug_patch_fn if f==fn else f for f in functions_list]
     else:
         functions_list = random.choice(augmentation_functions)
@@ -50,7 +50,7 @@ def AugmentNature(images, td_prob=0.3, scale=255.0, batch_shape=None):
                 continue
             else:
                 done = False
-        aug_patch_fn = lambda x: td_pres_aug.aug_bg_patches(x, td_scales, fn)
+        aug_patch_fn = lambda images, batch_shape: td_pres_aug.aug_bg_patches(images, td_scales, fn, batch_shape)
         functions_list = [aug_patch_fn if f==fn else f for f in functions_list]
     else:
         functions_list = random.choice(nature_augmentation_functions)
