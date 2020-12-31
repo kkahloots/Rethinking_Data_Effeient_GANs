@@ -100,7 +100,7 @@ def _resize_place_ROIs_with_BB(image, bg, ROIs, scales):
     return bg
 
 
-def aug_bg_patches(images, scales, aug_fun):
+def aug_bg_patches(images, scales, aug_fun, batch_shape=None):
 
     def _py_detect_patches(images, scales):
         images = images.numpy().astype(np.uint8)
@@ -114,26 +114,8 @@ def aug_bg_patches(images, scales, aug_fun):
             bgs += [bg]
         return np.stack(bgs)
 
+    if batch_shape is None:
+        batch_shape = [a for a in tf.shape(images)]
     augmented = tf.py_function(_py_detect_patches, [images, scales], tf.float32)
-    return tf.reshape(augmented, tf.shape(images))
 
-
-def aug_bg_patches_demo(images, scales, aug_fun):
-
-    def _py_detect_patches(images, scales):
-        images = images.numpy().astype(np.uint8)
-        bgs = []
-        bgsBB = []
-        for image in images:
-            ROIs_sample = _sample_ROI(image)
-            bg = _color_bg(image, image.copy(), ROIs_sample)
-            bg = cv2.cvtColor(aug_fun(tf.expand_dims(bg, 0)).numpy()[0].astype(np.uint8), cv2.IMREAD_COLOR)
-            bgBB = _resize_place_ROIs_with_BB(image, bg.copy(), ROIs_sample, scales)
-            bg = _resize_place_ROIs(image, bg, ROIs_sample, scales)
-
-            bgs += [bg]
-            bgsBB += [bgBB]
-        return np.stack([bgs, bgsBB])
-
-    augmented = tf.py_function(_py_detect_patches, [images, scales], tf.float32)
-    return tf.reshape(augmented[0], tf.shape(images)), tf.reshape(augmented[1], tf.shape(images))
+    return tf.reshape(augmented, batch_shape)

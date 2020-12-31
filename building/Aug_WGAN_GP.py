@@ -152,7 +152,8 @@ class Augmented_WGAN_GP:
         z = random.normal((self.batch_size, 1, 1, self.z_dim))
         with tf.GradientTape() as t:
             x_fake = self.G(z, training=True)
-            fake_logits = self.D(self.Augmentor(x_fake, self.td_prob), training=True)
+            fake_logits = self.D(self.Augmentor(images=x_fake, td_prob=self.td_prob, \
+                                                batch_shape=[self.batch_size, *self.image_shape]), training=True)
             loss = ops.g_loss_fn(fake_logits)
         grad = t.gradient(loss, self.G.trainable_variables)
         self.g_opt.apply_gradients(zip(grad, self.G.trainable_variables))
@@ -163,8 +164,10 @@ class Augmented_WGAN_GP:
         z = random.normal((self.batch_size, 1, 1, self.z_dim))
         with tf.GradientTape() as t:
             x_fake = self.G(z, training=True)
-            fake_logits = self.D(self.Augmentor(x_fake, self.td_prob), training=True)
-            real_logits = self.D(self.Augmentor(x_real, self.td_prob), training=True)
+            fake_logits = self.D(self.Augmentor(images=x_fake, td_prob=self.td_prob, \
+                                                batch_shape=[self.batch_size, *self.image_shape]), training=True)
+            real_logits = self.D(self.Augmentor(images=x_real, td_prob=self.td_prob, \
+                                                batch_shape=[self.batch_size, *self.image_shape]), training=True)
             cost = ops.d_loss_fn(fake_logits, real_logits)
             gp = self.gradient_penalty(partial(self.D, training=True), x_real, x_fake)
             cost += self.grad_penalty_weight * gp

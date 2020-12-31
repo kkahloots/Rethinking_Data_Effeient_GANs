@@ -3,10 +3,13 @@ import numpy as np
 import tensorflow_addons as tfa
 import tensorflow as tf
 
-@tf.function
-def rotate(images, angles):
-    im_shape = tf.shape(images)
-    src_height, src_width = tf.unstack(im_shape)[1:3]
+def rotate(images, angles, batch_shape=None):
+    if batch_shape is not None:
+        batch_size, src_height, src_width, _ = batch_shape
+    else:
+        im_shape = tf.shape(images)
+        src_height, src_width = tf.unstack(im_shape)[1:3]
+
     images = tf.pad(images, [[0, 0], [5, 5], [5, 5], [0, 0]], 'REFLECT')
     images = tf.image.resize(images, (src_height, src_width))
     pad_size = tf.cast(
@@ -17,10 +20,13 @@ def rotate(images, angles):
     return tf.slice(images, [0, pad_size, pad_size, 0], [-1, src_height, src_width, -1])
 
 
-@tf.function
-def rand_shift(images, ratio=0.125):
-    im_shape = tf.shape(images)
-    src_height, src_width = tf.unstack(im_shape)[1:3]
+def rand_shift(images, ratio=0.125, batch_shape=None):
+    if batch_shape is not None:
+        batch_size, src_height, src_width, _ = batch_shape
+    else:
+        im_shape = tf.shape(images)
+        src_height, src_width = tf.unstack(im_shape)[1:3]
+
     images = tf.pad(images, [[0, 0], [5, 5], [5, 5], [0, 0]], 'REFLECT')
     images = tf.image.resize(images, (src_height, src_width))
     pad_size = tf.cast(

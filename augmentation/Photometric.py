@@ -8,21 +8,20 @@ import numpy as np
 import tensorflow as tf
 
 
-def random_brightness(image, max_abs_change=50):
+def random_brightness(image, max_abs_change=50, batch_shape=None):
     return tf.clip_by_value(tf.image.random_brightness(image, max_abs_change), 0, 255)
 
 
-def random_saturation(image, strength_range=[0.5, 1.5]):
+def random_saturation(image, strength_range=[0.5, 1.5], batch_shape=None):
     return tf.clip_by_value(tf.image.random_saturation(image, *strength_range), 0, 255)
 
 
-def random_contrast(image, strength_range=[0.5, 1.5]):
+def random_contrast(image, strength_range=[0.5, 1.5], batch_shape=None):
     return tf.clip_by_value(tf.image.random_contrast(image, *strength_range), 0, 255)
 
 
-@tf.function
 def additive_shade(images, nb_ellipses=20, transparency_range=[-0.5, 0.8],
-                   kernel_size_range=[250, 350]):
+                   kernel_size_range=[250, 350], batch_shape=None):
     def _py_additive_shade(images):
         shaded_images = []
         for img in images:
@@ -47,5 +46,4 @@ def additive_shade(images, nb_ellipses=20, transparency_range=[-0.5, 0.8],
         return np.stack(shaded_images)
 
     shaded = tf.py_function(_py_additive_shade, [images], tf.float32)
-    res = tf.reshape(shaded, tf.shape(images))
-    return res
+    return tf.reshape(shaded, batch_shape)

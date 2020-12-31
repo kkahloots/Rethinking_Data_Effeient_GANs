@@ -1,6 +1,5 @@
 import random
 import itertools
-import tensorflow as tf
 
 import augmentation.Coloring as color_aug
 import augmentation.Distortion as distort_aug
@@ -16,7 +15,7 @@ d_scales = [a/100 for a in range(150, 301)]
 td_scales = [a/100 for a in range(80, 121)]
 
 
-def AugmentObject(x, td_prob=0.3, scale=255.0):
+def AugmentObject(x, td_prob=0.3, scale=255.0, batch_shape=None):
     aug_3d = np.random.choice([False, True], p=[1-td_prob, td_prob])
     if aug_3d:
         done = True
@@ -34,12 +33,12 @@ def AugmentObject(x, td_prob=0.3, scale=255.0):
         functions_list = random.choice(augmentation_functions)
 
     for f in functions_list:
-        x = f(x)
+        x = f(images=x, batch_shape=batch_shape)
 
     return x/scale
 
 
-def AugmentNature(x, td_prob=0.3, scale=255.0):
+def AugmentNature(x, td_prob=0.3, scale=255.0, batch_shape=None):
     aug_3d = np.random.choice([False, True], p=[1-td_prob, td_prob])
     if aug_3d:
         done = True
@@ -57,169 +56,153 @@ def AugmentNature(x, td_prob=0.3, scale=255.0):
         functions_list = random.choice(nature_augmentation_functions)
 
     for f in functions_list:
-        x = f(x)
+        x = f(images=x, batch_shape=batch_shape)
 
     return x/scale
 
 
-def clone(x):
-    return x
+def clone(images, batch_shape=None):
+    return images
 
 
-def add_random_brightness(x):
-    x = photo_aug.random_brightness(x, max_abs_change=100)
-    return x
+def add_random_brightness(images, batch_shape=None):
+    images = photo_aug.random_brightness(images=images, max_abs_change=100, batch_shape=batch_shape)
+    return images
 
 
-def add_random_contrast(x):
-    x = photo_aug.random_contrast(x)
-    return x
+def add_random_contrast(images, batch_shape=None):
+    images = photo_aug.random_contrast(images=images, batch_shape=batch_shape)
+    return images
 
 
-def add_random_saturation(x):
-    x = photo_aug.random_saturation(x)
-    return x
+def add_random_saturation(images, batch_shape=None):
+    images = photo_aug.random_saturation(images=images, batch_shape=batch_shape)
+    return images
 
 
-def add_additive_shade(x):
-    x = photo_aug.additive_shade(x)
-    return x
+def add_additive_shade(images, batch_shape=None):
+    images = photo_aug.additive_shade(images=images, batch_shape=batch_shape)
+    return images
 
 
-def transform_color_space(x):
-    x = color_aug.color_space_transform(x)
-    return x
+def transform_color_space(images, batch_shape=None):
+    images = color_aug.color_space_transform(images=images, batch_shape=batch_shape)
+    return images
 
 
-def rotate_random(x):
+def rotate_random(images, batch_shape=None):
     a = random.randint(-35, 35)
-    x = pres_aug.rotate(x, a)
-    return x
+    images = pres_aug.rotate(images=images, batch_shape=batch_shape, angles=a)
+    return images
 
 
-def flip_left_right(x):
-    x = mirror_aug.flip_left_right(x)
-    return x
+def flip_left_right(images, batch_shape=None):
+    images = mirror_aug.flip_left_right(images=images, batch_shape=batch_shape)
+    return images
 
 
-def distort_random(x):
+def distort_random(images, batch_shape=None):
     n = random.randint(5, 15)
     s = random.randint(-5, 5)
-    x = distort_aug.distort(x, num_anchors=n, perturb_sigma=s)
+    images = distort_aug.distort(images=images, batch_shape=batch_shape, num_anchors=n, perturb_sigma=s)
 
-    return x
+    return images
 
 
-def shift_random(x):
+def shift_random(images, batch_shape=None):
     r = random.choice(scales)
-    x = pres_aug.rand_shift(x, ratio=r)
-    return x
+    images = pres_aug.rand_shift(images=images, batch_shape=batch_shape, ratio=r)
+    return images
 
 
-def shear_left_right_random(x):
+def shear_left_right_random(images, batch_shape=None):
     l = random.choice(scales)
-    x = trans_aug.shear_left_right(x, shear_lambda=l)
-    return x
+    images = trans_aug.shear_left_right(images=images, batch_shape=batch_shape, shear_lambda=l)
+    return images
 
 
-def translate_top_down_random(x):
+def translate_top_down_random(images, batch_shape=None):
     l = random.choice(scales)
-    x = trans_aug.shear_top_down(x, shear_lambda=l)
-    return x
+    images = trans_aug.shear_top_down(images=images, batch_shape=batch_shape, shear_lambda=l)
+    return images
 
 
-def shear_right_left_random(x):
+def shear_right_left_random(images, batch_shape=None):
     l = random.choice(scales)
-    x = trans_aug.shear_left_right(x, shear_lambda=-l)
-    return x
+    images = trans_aug.shear_left_right(images=images, batch_shape=batch_shape, shear_lambda=-l)
+    return images
 
-def shear_down_top_random(x):
-
+def shear_down_top_random(images, batch_shape=None):
     l = random.choice(scales)
-    x = trans_aug.shear_down_top(x, shear_lambda=-l)
-    return x
+    images = trans_aug.shear_down_top(images=images, batch_shape=batch_shape, shear_lambda=-l)
+    return images
 
-def shear_top_down_random(x):
+def shear_top_down_random(images, batch_shape=None):
     l = random.choice(scales)
-    x = trans_aug.shear_top_down(x, shear_lambda=-l)
-    return x
+    images = trans_aug.shear_top_down(images=images, batch_shape=batch_shape, shear_lambda=-l)
+    return images
 
-def skew_left_right_random(x):
-
+def skew_left_right_random(images, batch_shape=None):
     ll = random.choice(scales)
     lr = random.choice(scales)
-    x = trans_aug.skew_left_right(x, l_shear_lambda=ll/random.choice(d_scales), r_shear_lambda=lr/random.choice(d_scales))
+    images = trans_aug.skew_left_right(images=images, batch_shape=batch_shape, \
+                                       l_shear_lambda=ll/random.choice(d_scales), r_shear_lambda=lr/random.choice(d_scales))
+    return images
 
-    return x
 
-
-def skew_top_left_random(x):
-
+def skew_top_left_random(images, batch_shape=None):
     lt = random.choice(scales)
     ll = random.choice(scales)
-    x = trans_aug.skew_top_left(x, t_shear_lambda=lt/random.choice(d_scales), l_shear_lambda=ll/random.choice(d_scales))
+    images = trans_aug.skew_top_left(images=images, batch_shape=batch_shape, \
+                                     t_shear_lambda=lt/random.choice(d_scales), l_shear_lambda=ll/random.choice(d_scales))
+    return images
 
-    return x
-
-def skew_down_left(x):
-
+def skew_down_left(images, batch_shape=None):
     lt = random.choice(scales) * -1
     ll = random.choice(scales)
-    x = trans_aug.skew_top_left(x, t_shear_lambda=lt/random.choice(d_scales), l_shear_lambda=ll/random.choice(d_scales))
-
-    return x
-
-
-def shear_top_right(x):
+    images = trans_aug.skew_top_left(images=images, batch_shape=batch_shape, \
+                                     t_shear_lambda=lt/random.choice(d_scales), \
+                                     l_shear_lambda=ll/random.choice(d_scales))
+    return images
 
 
+def shear_top_right(images, batch_shape=None):
     lt = random.choice(scales) * -1
     ll = random.choice(scales) * -1
-    x = trans_aug.shear_left_down(x, t_shear_lambda=lt/random.choice(d_scales), l_shear_lambda=ll/random.choice(d_scales))
+    images = trans_aug.shear_left_down(images=images, batch_shape=batch_shape, \
+                                       t_shear_lambda=lt/random.choice(d_scales), \
+                                       l_shear_lambda=ll/random.choice(d_scales))
+    return images
 
 
-    return x
+def shear_left_down(images, batch_shape=None):
+    lt = random.choice(scales)
+    ll = random.choice(scales)
+    images = trans_aug.shear_left_down(images=images, batch_shape=batch_shape, \
+                                       t_shear_lambda=lt/random.choice(d_scales), \
+                                       l_shear_lambda=ll/random.choice(d_scales))
+    return images
 
 
-def shear_left_down(x):
+def skew_left_top_random(images, batch_shape=None):
 
     lt = random.choice(scales)
     ll = random.choice(scales)
-    x = trans_aug.shear_left_down(x, t_shear_lambda=lt/random.choice(d_scales), l_shear_lambda=ll/random.choice(d_scales))
-
-    return x
-
-
-def skew_left_top_random(x):
-
-    lt = random.choice(scales)
-    ll = random.choice(scales)
-    x = trans_aug.skew_left_top(x, t_shear_lambda=lt/random.choice(d_scales), l_shear_lambda=ll/random.choice(d_scales))
+    images = trans_aug.skew_left_top(images=images, batch_shape=batch_shape, \
+                                     t_shear_lambda=lt/random.choice(d_scales), \
+                                     l_shear_lambda=ll/random.choice(d_scales))
+    return images
 
 
-    return x
-
-
-def skew_top_down_random(x):
-
+def skew_top_down_random(images, batch_shape=None):
     ll = random.choice(scales)
     lr = random.choice(scales)
-    x = trans_aug.skew_top_down(x, t_shear_lambda=ll/random.choice(d_scales), d_shear_lambda=lr/random.choice(d_scales))
+    images = trans_aug.skew_top_down(images=images, batch_shape=batch_shape, \
+                                     t_shear_lambda=ll/random.choice(d_scales), \
+                                     d_shear_lambda=lr/random.choice(d_scales))
 
-    return x
+    return images
 
-
-# def resize_patches_random(x):
-#     # scale = tf.reduce_max(x).numpy() <= 1.0
-#     # if scale:
-#     #     x *= 255
-#
-#     scales = [a / 100 for a in range(80, 120)]
-#     x = td_pres_aug.resize_patches(x, scales)
-#
-#     # if scale:
-#     #     x /= 255
-#     return x
 
 
 photo_aug_list = [clone, add_additive_shade, add_random_brightness, add_random_contrast, \
@@ -267,20 +250,3 @@ augmentation3d_functions = list(set([ tuple(set(fn)) for fn in list(itertools.pr
                                                 mirror_aug_list,
                                                 pres_aug_list + trans_aug_list
                                                 ))]))
-# augmentation_functions = {
-#     'mirror': flip_left_right,
-#     'random_brightness': add_random_brightness,
-#     'random_contrast': add_random_contrast,
-#     'random_saturation': add_random_saturation,
-#     'additive_shade': add_additive_shade,
-#     'color_space_transform': transform_color_space,
-#     'random_rotate': rotate_random,
-#     'random_distort': distort_random,
-#     'random_shift': shift_random,
-#     'random_top_down': translate_top_down_random,
-#     'random_left_right': translate_left_right_random,
-#     'additive_shade_distort': lambda x: add_additive_shade(distort_random(x)),
-#     'distort_additive_shade': lambda x: distort_random(add_additive_shade(x)),
-#     'photo_distort': lambda x: add_additive_shade(distort_random(x)),
-#     'distort_photo': lambda x: distort_random(add_additive_shade(x)),
-# }
