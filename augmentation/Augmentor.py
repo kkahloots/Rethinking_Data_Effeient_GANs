@@ -17,21 +17,22 @@ td_scales = [a/100 for a in range(80, 121)]
 
 
 def AugmentObject(x, td_prob=0.3):
-    aug_functions = np.random.choice([False, True], p=[1-td_prob, td_prob])
-    if aug_functions:
+    aug_3d = np.random.choice([False, True], p=[1-td_prob, td_prob])
+    if aug_3d:
         done = True
-        fn = random.choice(aug_functions)
+        functions_list = random.choice(augmentation3d_functions)
+        fn = random.choice(functions_list)
         while done:
+            fn = random.choice(functions_list)
             if fn in photo_aug_list:
                 continue
             else:
                 done = False
         aug_patch_fn = lambda x: td_pres_aug.aug_bg_patches(x, td_scales, fn)
-        aug_functions = [aug_patch_fn if f==fn else f for f in augmentation3d_functions]
+        functions_list = [aug_patch_fn if f==fn else f for f in functions_list]
     else:
-        aug_functions = augmentation_functions
+        functions_list = random.choice(augmentation_functions)
 
-    functions_list = random.choice(aug_functions)
     for f in functions_list:
         x = f(x)
 
@@ -39,21 +40,22 @@ def AugmentObject(x, td_prob=0.3):
 
 
 def AugmentNature(x, td_prob=0.3):
-    aug_functions = np.random.choice([False, True], p=[1-td_prob, td_prob])
-    if aug_functions:
+    aug_3d = np.random.choice([False, True], p=[1-td_prob, td_prob])
+    if aug_3d:
         done = True
-        fn = random.choice(aug_functions)
+        functions_list = random.choice(augmentation3d_functions)
+        fn = random.choice(functions_list)
         while done:
+            fn = random.choice(functions_list)
             if fn in photo_aug_list:
                 continue
             else:
                 done = False
         aug_patch_fn = lambda x: td_pres_aug.aug_bg_patches(x, td_scales, fn)
-        aug_functions = [aug_patch_fn if f==fn else f for f in augmentation3d_functions]
+        functions_list = [aug_patch_fn if f==fn else f for f in functions_list]
     else:
-        aug_functions = nature_augmentation_functions
+        functions_list = random.choice(nature_augmentation_functions)
 
-    functions_list = random.choice(aug_functions)
     for f in functions_list:
         x = f(x)
 
