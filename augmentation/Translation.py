@@ -2,6 +2,7 @@
 import tensorflow_addons as tfa
 import tensorflow as tf
 
+@tf.function
 def shear_left_right(images, shear_lambda):
     im_shape = tf.shape(images)
     src_height, src_width = tf.unstack(im_shape)[1:3]
@@ -17,6 +18,7 @@ def shear_left_right(images, shear_lambda):
     return tf.slice(images, [0, pad_size*2, pad_size*2, 0], [-1, src_height, src_width, -1])
 
 
+@tf.function
 def shear_left_down(images, l_shear_lambda, t_shear_lambda):
     im_shape = tf.shape(images)
     src_height, src_width = tf.unstack(im_shape)[1:3]
@@ -32,6 +34,7 @@ def shear_left_down(images, l_shear_lambda, t_shear_lambda):
     return tf.slice(images, [0, pad_size * 2, pad_size * 2, 0], [-1, src_height, src_width, -1])
 
 
+@tf.function
 def skew_left_right(images, l_shear_lambda, r_shear_lambda):
     im_shape = tf.shape(images)
     src_height, src_width = tf.unstack(im_shape)[1:3]
@@ -59,6 +62,7 @@ def skew_left_right(images, l_shear_lambda, r_shear_lambda):
     return tf.image.flip_left_right(images)
 
 
+@tf.function
 def skew_top_down(images, t_shear_lambda, d_shear_lambda):
     images = tf.image.rot90(images)
     im_shape = tf.shape(images)
@@ -87,6 +91,7 @@ def skew_top_down(images, t_shear_lambda, d_shear_lambda):
     return tf.image.rot90(tf.image.rot90(tf.image.rot90(tf.image.flip_left_right(images))))
 
 
+@tf.function
 def skew_top_left(images, t_shear_lambda, l_shear_lambda):
     im_shape = tf.shape(images)
     src_height, src_width = tf.unstack(im_shape)[1:3]
@@ -114,6 +119,7 @@ def skew_top_left(images, t_shear_lambda, l_shear_lambda):
     return tf.image.rot90(tf.image.rot90(tf.image.rot90(images)))
 
 
+@tf.function
 def skew_left_top(images, t_shear_lambda, l_shear_lambda):
     images = tf.image.rot90(images)
     im_shape = tf.shape(images)
@@ -141,6 +147,7 @@ def skew_left_top(images, t_shear_lambda, l_shear_lambda):
     return tf.slice(images, [0, pad_size * 2, pad_size * 2, 0], [-1, src_height, src_width, -1])
 
 
+@tf.function
 def shear_top_down(images, shear_lambda):
     images = tf.image.rot90(images)
     im_shape = tf.shape(images)
@@ -158,6 +165,7 @@ def shear_top_down(images, shear_lambda):
     return tf.image.rot90(tf.image.rot90(tf.image.rot90(images)))
 
 
+@tf.function
 def shear_down_top(images, shear_lambda):
     images = tf.image.flip_up_down(images)
     images = tf.image.rot90(images)
@@ -175,6 +183,7 @@ def shear_down_top(images, shear_lambda):
     images = tf.slice(images, [0, pad_size*2, pad_size*2, 0], [-1, src_height, src_width, -1])
     return tf.image.flip_up_down(tf.image.rot90(tf.image.rot90(tf.image.rot90(images))))
 
+@tf.function
 def transformImg(imgIn,forward_transform):
     t = tfa.image.transform_ops.matrices_to_flat_transforms(tf.linalg.inv(forward_transform))
     return tfa.image.transform(imgIn, t, interpolation="BILINEAR")

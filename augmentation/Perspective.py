@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow_addons as tfa
 import tensorflow as tf
 
+@tf.function
 def rotate(images, angles):
     im_shape = tf.shape(images)
     src_height, src_width = tf.unstack(im_shape)[1:3]
@@ -16,6 +17,7 @@ def rotate(images, angles):
     return tf.slice(images, [0, pad_size, pad_size, 0], [-1, src_height, src_width, -1])
 
 
+@tf.function
 def rand_shift(images, ratio=0.125):
     im_shape = tf.shape(images)
     src_height, src_width = tf.unstack(im_shape)[1:3]

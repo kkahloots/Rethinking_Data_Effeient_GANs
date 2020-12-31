@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-
+@tf.function
 def distort(images, num_anchors=10, perturb_sigma=5.0):
     # Similar results to elastic deformation (a bit complex transformation)
     # However, the transformation is much faster that elastic deformation and have a straightforward arguments

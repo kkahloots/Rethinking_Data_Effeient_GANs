@@ -20,6 +20,7 @@ def random_contrast(image, strength_range=[0.5, 1.5]):
     return tf.clip_by_value(tf.image.random_contrast(image, *strength_range), 0, 255)
 
 
+@tf.function
 def additive_shade(images, nb_ellipses=20, transparency_range=[-0.5, 0.8],
                    kernel_size_range=[250, 350]):
     def _py_additive_shade(images):
