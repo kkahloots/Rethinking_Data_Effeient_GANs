@@ -15,7 +15,7 @@ d_scales = [a/100 for a in range(150, 301)]
 td_scales = [a/100 for a in range(80, 121)]
 
 
-def AugmentObject(x, td_prob=0.3, scale=255.0, batch_shape=None):
+def AugmentObject(images, td_prob=0.3, scale=255.0, batch_shape=None):
     aug_3d = np.random.choice([False, True], p=[1-td_prob, td_prob])
     if aug_3d:
         done = True
@@ -33,12 +33,12 @@ def AugmentObject(x, td_prob=0.3, scale=255.0, batch_shape=None):
         functions_list = random.choice(augmentation_functions)
 
     for f in functions_list:
-        x = f(images=x, batch_shape=batch_shape)
+        images = f(images=images, batch_shape=batch_shape)
 
-    return x/scale
+    return images/scale
 
 
-def AugmentNature(x, td_prob=0.3, scale=255.0, batch_shape=None):
+def AugmentNature(images, td_prob=0.3, scale=255.0, batch_shape=None):
     aug_3d = np.random.choice([False, True], p=[1-td_prob, td_prob])
     if aug_3d:
         done = True
@@ -56,9 +56,9 @@ def AugmentNature(x, td_prob=0.3, scale=255.0, batch_shape=None):
         functions_list = random.choice(nature_augmentation_functions)
 
     for f in functions_list:
-        x = f(images=x, batch_shape=batch_shape)
+        images = f(images=images, batch_shape=batch_shape)
 
-    return x/scale
+    return images/scale
 
 
 def clone(images, batch_shape=None):

@@ -8,16 +8,16 @@ import numpy as np
 import tensorflow as tf
 
 
-def random_brightness(image, max_abs_change=50, batch_shape=None):
-    return tf.clip_by_value(tf.image.random_brightness(image, max_abs_change), 0, 255)
+def random_brightness(images, max_abs_change=50, batch_shape=None):
+    return tf.clip_by_value(tf.image.random_brightness(images, max_abs_change), 0, 255)
 
 
-def random_saturation(image, strength_range=[0.5, 1.5], batch_shape=None):
-    return tf.clip_by_value(tf.image.random_saturation(image, *strength_range), 0, 255)
+def random_saturation(images, strength_range=[0.5, 1.5], batch_shape=None):
+    return tf.clip_by_value(tf.image.random_saturation(images, *strength_range), 0, 255)
 
 
-def random_contrast(image, strength_range=[0.5, 1.5], batch_shape=None):
-    return tf.clip_by_value(tf.image.random_contrast(image, *strength_range), 0, 255)
+def random_contrast(images, strength_range=[0.5, 1.5], batch_shape=None):
+    return tf.clip_by_value(tf.image.random_contrast(images, *strength_range), 0, 255)
 
 
 def additive_shade(images, nb_ellipses=20, transparency_range=[-0.5, 0.8],
