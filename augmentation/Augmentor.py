@@ -31,7 +31,8 @@ def AugmentObject(x, td_prob=0.3):
     else:
         aug_functions = augmentation_functions
 
-    for f in aug_functions:
+    functions_list = random.choice(aug_functions)
+    for f in functions_list:
         x = f(x)
 
     return x
@@ -52,7 +53,8 @@ def AugmentNature(x, td_prob=0.3):
     else:
         aug_functions = nature_augmentation_functions
 
-    for f in aug_functions:
+    functions_list = random.choice(aug_functions)
+    for f in functions_list:
         x = f(x)
 
     return x
