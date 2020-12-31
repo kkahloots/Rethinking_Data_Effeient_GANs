@@ -64,9 +64,9 @@ def img_merge(images, n_rows=None, n_cols=None, padding=0, pad_value=0):
 
 def save_image_grid(img_grid, epoch, model_name, output_dir):
     """Saves image grid to user output dir."""
-    file_name = model_name + f'_{epoch}.png'
+    file_name = model_name + f'_{epoch}.jpg'
     output_dir = os.path.join(output_dir, file_name)
-    tf.io.write_file(output_dir, tf.image.encode_png(tf.cast(img_grid, tf.uint8)))
+    tf.io.write_file(output_dir, tf.image.encode_jpeg(tf.cast(img_grid, tf.uint8)))
 
 
 def get_terminal_width():
