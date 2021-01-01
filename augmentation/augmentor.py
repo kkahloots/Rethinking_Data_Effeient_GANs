@@ -298,4 +298,4 @@ def prepare_functions_list():
         if temp_list != []:
             augmentation_functions += [temp_list]
 
-    return augmentation_functions
+    return random.shuffle(augmentation_functions)
