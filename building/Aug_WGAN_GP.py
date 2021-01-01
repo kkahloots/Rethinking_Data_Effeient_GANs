@@ -129,8 +129,7 @@ class Augmented_WGAN_GP:
             g_train_loss.reset_states()
             d_train_loss.reset_states()
             d_val_loss.reset_states()
-            #del train_bar
-            #del val_bar
+
 
             self.G.save_weights(filepath=f'{self.save_path}/{self.model_name}_generator')
             self.D.save_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator')
