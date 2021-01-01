@@ -135,7 +135,7 @@ class Augmented_WGAN_GP:
             self.D.save_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator')
 
             if epoch >= int(2e4):
-                if epoch%100 == 0:
+                if epoch%1000 == 0:
                     self.G.save_weights(filepath=f'{self.save_path}/{self.model_name}_generator{epoch}')
                     self.D.save_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator{epoch}')
 
@@ -143,7 +143,7 @@ class Augmented_WGAN_GP:
                 samples = self.generate_samples(z)
                 img_path = f'{self.save_path}/images/{self.model_name}'
                 os.makedirs(img_path, exist_ok=True)
-                image_grid = img_merge(samples, n_rows=6).squeeze()
+                image_grid = img_merge(samples.numpy(), n_rows=6).squeeze()
                 save_image_grid(image_grid, epoch, self.model_name, output_dir=img_path)
 
 

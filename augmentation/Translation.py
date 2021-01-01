@@ -59,8 +59,6 @@ def skew_left_right(images, l_shear_lambda, r_shear_lambda, batch_shape=None):
     images = tf.slice(images, [0, pad_size * 2, pad_size * 2, 0], [-1, src_height, src_width, -1])
 
     images = tf.image.flip_left_right(images)
-    #im_shape = tf.shape(images)
-    #src_height, src_width = tf.unstack(im_shape)[1:3]
     pad_size = tf.cast(
         tf.cast(tf.maximum(src_height, src_width), tf.float32) * (2.0 - 1.0) / 2 + 0.5,
         tf.int32)  # larger than usual (sqrt(2))
@@ -72,7 +70,7 @@ def skew_left_right(images, l_shear_lambda, r_shear_lambda, batch_shape=None):
 
 
 def skew_top_down(images, t_shear_lambda, d_shear_lambda, batch_shape=None):
-    images = tf.image.rot90(images)
+    images = rot90(images)
     if batch_shape is not None:
         _, src_height, src_width,_ = batch_shape
     else:
@@ -91,8 +89,6 @@ def skew_top_down(images, t_shear_lambda, d_shear_lambda, batch_shape=None):
     images = tf.slice(images, [0, pad_size * 2, pad_size * 2, 0], [-1, src_height, src_width, -1])
 
     images = tf.image.flip_left_right(images)
-    #im_shape = tf.shape(images)
-    #src_height, src_width = tf.unstack(im_shape)[1:3]
     pad_size = tf.cast(
         tf.cast(tf.maximum(src_height, src_width), tf.float32) * (2.0 - 1.0) / 2 + 0.5,
         tf.int32)  # larger than usual (sqrt(2))
@@ -121,9 +117,7 @@ def skew_top_left(images, t_shear_lambda, l_shear_lambda, batch_shape=None):
     images = transformImg(images, [[1.0, t_shear_lambda + l_shear_lambda, 0], [0, 1.0, 0], [0, 0, 1.0]])
     images = tf.slice(images, [0, pad_size * 2, pad_size * 2, 0], [-1, src_height, src_width, -1])
 
-    images = tf.image.rot90(images)
-    #im_shape = tf.shape(images)
-    #src_height, src_width = tf.unstack(im_shape)[1:3]
+    images = rot90(images)
     pad_size = tf.cast(
         tf.cast(tf.maximum(src_height, src_width), tf.float32) * (2.0 - 1.0) / 2 + 0.5,
         tf.int32)  # larger than usual (sqrt(2))
@@ -131,11 +125,11 @@ def skew_top_left(images, t_shear_lambda, l_shear_lambda, batch_shape=None):
     images = tf.pad(images, [[0, 0], [pad_size] * 2, [pad_size] * 2, [0, 0]], 'REFLECT')
     images = transformImg(images, [[1.0, t_shear_lambda, 0], [0, 1.0, 0], [0, 0, 1.0]])
     images = tf.slice(images, [0, pad_size * 2, pad_size * 2, 0], [-1, src_height, src_width, -1])
-    return tf.image.rot90(tf.image.rot90(tf.image.rot90(images)))
+    return tf.image.rot90(tf.image.rot90(rot90(images)))
 
 
 def skew_left_top(images, t_shear_lambda, l_shear_lambda, batch_shape=None):
-    images = tf.image.rot90(images)
+    images = rot90(images)
     if batch_shape is not None:
         _, src_height, src_width,_ = batch_shape
     else:
@@ -152,10 +146,8 @@ def skew_left_top(images, t_shear_lambda, l_shear_lambda, batch_shape=None):
     images = tf.pad(images, [[0, 0], [pad_size] * 2, [pad_size] * 2, [0, 0]], 'REFLECT')
     images = transformImg(images, [[1.0, t_shear_lambda + l_shear_lambda, 0], [0, 1.0, 0], [0, 0, 1.0]])
     images = tf.slice(images, [0, pad_size * 2, pad_size * 2, 0], [-1, src_height, src_width, -1])
-    images = tf.image.rot90(tf.image.rot90(tf.image.rot90(images)))
+    images = tf.image.rot90(tf.image.rot90(rot90(images)))
 
-    #im_shape = tf.shape(images)
-    #src_height, src_width = tf.unstack(im_shape)[1:3]
     pad_size = tf.cast(
         tf.cast(tf.maximum(src_height, src_width), tf.float32) * (2.0 - 1.0) / 2 + 0.5,
         tf.int32)  # larger than usual (sqrt(2))
@@ -166,7 +158,7 @@ def skew_left_top(images, t_shear_lambda, l_shear_lambda, batch_shape=None):
 
 
 def shear_top_down(images, shear_lambda, batch_shape=None):
-    images = tf.image.rot90(images)
+    images = rot90(images)
     if batch_shape is not None:
         _, src_height, src_width,_ = batch_shape
     else:
@@ -183,12 +175,12 @@ def shear_top_down(images, shear_lambda, batch_shape=None):
 
     images = transformImg(images, [[1.0, shear_lambda, 0], [0, 1.0, 0], [0, 0, 1.0]])
     images = tf.slice(images, [0, pad_size*2, pad_size*2, 0], [-1, src_height, src_width, -1])
-    return tf.image.rot90(tf.image.rot90(tf.image.rot90(images)))
+    return tf.image.rot90(tf.image.rot90(rot90(images)))
 
 
 def shear_down_top(images, shear_lambda, batch_shape=None):
     images = tf.image.flip_up_down(images)
-    images = tf.image.rot90(images)
+    images = rot90(images)
     if batch_shape is not None:
         _, src_height, src_width,_ = batch_shape
     else:
@@ -205,10 +197,12 @@ def shear_down_top(images, shear_lambda, batch_shape=None):
 
     images = transformImg(images, [[1.0, shear_lambda, 0], [0, 1.0, 0], [0, 0, 1.0]])
     images = tf.slice(images, [0, pad_size*2, pad_size*2, 0], [-1, src_height, src_width, -1])
-    return tf.image.flip_up_down(tf.image.rot90(tf.image.rot90(tf.image.rot90(images))))
+    return tf.image.flip_up_down(tf.image.rot90(tf.image.rot90(rot90(images))))
 
 def transformImg(imgIn,forward_transform):
     t = tfa.image.transform_ops.matrices_to_flat_transforms(tf.linalg.inv(forward_transform))
     return tfa.image.transform(imgIn, t, interpolation="BILINEAR")
 
-
+@tf.function
+def rot90(images):
+    return tf.transpose(tf.reverse(images, [2]), [0, 2, 1, 3])

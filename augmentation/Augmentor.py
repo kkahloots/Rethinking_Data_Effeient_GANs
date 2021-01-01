@@ -16,7 +16,7 @@ td_scales = [a/100 for a in range(80, 121)]
 
 
 def AugmentObject(images, td_prob=0.3, scale=255.0, batch_shape=None):
-    aug_3d = np.random.choice([False, True], p=[1-td_prob, td_prob])
+    aug_3d = False#np.random.choice([False, True], p=[1-td_prob, td_prob])
     if aug_3d:
         done = True
         functions_list = random.choice(augmentation3d_functions)
@@ -33,6 +33,7 @@ def AugmentObject(images, td_prob=0.3, scale=255.0, batch_shape=None):
         functions_list = random.choice(augmentation_functions)
 
     for f in functions_list:
+        print(f)
         images = f(images=images, batch_shape=batch_shape)
 
     return images/scale
@@ -205,7 +206,7 @@ def skew_top_down_random(images, batch_shape=None):
 
 
 
-photo_aug_list = [clone, add_additive_shade, add_random_brightness, add_random_contrast, \
+photo_aug_list = [clone, add_additive_shade, add_random_contrast, add_random_brightness, \
                          add_random_saturation, add_additive_shade, add_random_brightness,
                          clone, add_random_contrast, add_random_saturation]
 
@@ -230,10 +231,11 @@ pres_aug_list =  [clone, shift_random, shift_random, shift_random, \
                                          shift_random, shift_random, shift_random]
 
 
-augmentation_functions = list(set([ tuple(set(fn)) for fn in list(itertools.product(photo_aug_list,
+augmentation_functions = list(set([ tuple(set(fn)) for fn in list(itertools.product(
+                                                photo_aug_list,
                                                 distort_aug_list,
                                                 mirror_aug_list,
-                                                pres_aug_list + trans_aug_list,
+                                                pres_aug_list , trans_aug_list,
                                                 color_aug_list
                                                 ))]))
 
