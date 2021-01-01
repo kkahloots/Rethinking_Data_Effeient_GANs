@@ -140,12 +140,12 @@ class Augmented_WGAN_GP:
                     self.G.save_weights(filepath=f'{self.save_path}/{self.model_name}_generator{epoch}')
                     self.D.save_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator{epoch}')
 
-            #if epoch%250 ==1:
-            samples = self.generate_samples(z, image_scale=self.image_scale)
-            img_path = f'{self.save_path}/images/{self.model_name}'
-            os.makedirs(img_path, exist_ok=True)
-            image_grid = img_merge(samples.numpy(), n_rows=6).squeeze()
-            save_image_grid(image_grid, epoch, self.model_name, output_dir=img_path)
+            if epoch%250 ==1:
+                samples = self.generate_samples(z, image_scale=self.image_scale)
+                img_path = f'{self.save_path}/images/{self.model_name}'
+                os.makedirs(img_path, exist_ok=True)
+                image_grid = img_merge(samples.numpy(), n_rows=6).squeeze()
+                save_image_grid(image_grid, epoch, self.model_name, output_dir=img_path)
 
 
     @tf.function
