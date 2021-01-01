@@ -15,14 +15,14 @@ import building.ops as ops
 from utils.utils import img_merge
 from utils.utils import pbar, vbar
 from utils.utils import save_image_grid
-from augmentation.Augmentor import AugmentNature, AugmentObject
+from augmentation.augmentor import Augmentor
 
 class Augmented_WGAN_GP:
     def __init__(self,
                  model_name,
                  image_shape,
-                 nature=False,
-                 td_prob=0.3,
+                 image_scale=255.0,
+                 td_prob=0.25,
                  aug_level=4,
                  save_path=None,
                  batch_size=36,
@@ -33,13 +33,14 @@ class Augmented_WGAN_GP:
                  d_lr=0.0001):
 
         self.model_name = model_name
-        self.Augmentor = AugmentNature if nature else AugmentObject
+        self.Augmentor = Augmentor()
         self.td_prob =td_prob
         self.save_path = save_path
         self.z_dim = z_dim
         self.batch_size = batch_size
         self.aug_level = aug_level
         self.image_shape = image_shape
+        self.image_scale = image_scale
         self.n_critic = n_critic
         self.grad_penalty_weight = g_penalty
         self.g_opt = ops.AdamOptWrapper(learning_rate=g_lr)
@@ -91,10 +92,10 @@ class Augmented_WGAN_GP:
                     break
 
                 for _ in range(self.n_critic):
-                    d_loss = self.train_d(batch)
+                    d_loss = self.train_d(batch, image_scale=self.image_scale)
                     d_train_loss(d_loss)
 
-                g_loss = self.train_g()
+                g_loss = self.train_g(image_scale=self.image_scale)
                 g_train_loss(g_loss)
 
                 train_bar.postfix['g_loss'] = f'{g_train_loss.result():6.3f}'
@@ -109,7 +110,7 @@ class Augmented_WGAN_GP:
                     if val_bar.n >= n_itr//5:
                         break
 
-                    d_val_l = self.val_d(batch)
+                    d_val_l = self.val_d(batch , image_scale=self.image_scale)
                     d_val_loss(d_val_l)
 
                     val_bar.postfix['d_val_loss'] = f'{d_val_loss.result():6.3f}'
@@ -128,8 +129,8 @@ class Augmented_WGAN_GP:
             g_train_loss.reset_states()
             d_train_loss.reset_states()
             d_val_loss.reset_states()
-            del train_bar
-            del val_bar
+            #del train_bar
+            #del val_bar
 
             self.G.save_weights(filepath=f'{self.save_path}/{self.model_name}_generator')
             self.D.save_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator')
@@ -139,20 +140,20 @@ class Augmented_WGAN_GP:
                     self.G.save_weights(filepath=f'{self.save_path}/{self.model_name}_generator{epoch}')
                     self.D.save_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator{epoch}')
 
-            if epoch%250 ==1:
-                samples = self.generate_samples(z)
-                img_path = f'{self.save_path}/images/{self.model_name}'
-                os.makedirs(img_path, exist_ok=True)
-                image_grid = img_merge(samples.numpy(), n_rows=6).squeeze()
-                save_image_grid(image_grid, epoch, self.model_name, output_dir=img_path)
+            #if epoch%250 ==1:
+            samples = self.generate_samples(z, image_scale=self.image_scale)
+            img_path = f'{self.save_path}/images/{self.model_name}'
+            os.makedirs(img_path, exist_ok=True)
+            image_grid = img_merge(samples.numpy(), n_rows=6).squeeze()
+            save_image_grid(image_grid, epoch, self.model_name, output_dir=img_path)
 
 
     @tf.function
-    def train_g(self):
+    def train_g(self, image_scale=255.0):
         z = random.normal((self.batch_size, 1, 1, self.z_dim))
         with tf.GradientTape() as t:
-            x_fake = self.G(z, training=True)
-            fake_logits = self.D(self.Augmentor(images=x_fake, td_prob=self.td_prob, \
+            x_fake = self.G(z, training=True) * image_scale
+            fake_logits = self.D(self.Augmentor.augment(images=x_fake, td_prob=self.td_prob, scale=image_scale,\
                                                 batch_shape=[self.batch_size, *self.image_shape]), training=True)
             loss = ops.g_loss_fn(fake_logits)
         grad = t.gradient(loss, self.G.trainable_variables)
@@ -160,16 +161,16 @@ class Augmented_WGAN_GP:
         return loss
 
     @tf.function
-    def train_d(self, x_real):
+    def train_d(self, x_real, image_scale=255.0):
         z = random.normal((self.batch_size, 1, 1, self.z_dim))
         with tf.GradientTape() as t:
-            x_fake = self.G(z, training=True)
-            fake_logits = self.D(self.Augmentor(images=x_fake, td_prob=self.td_prob, \
+            x_fake = self.G(z, training=True) * image_scale
+            fake_logits = self.D(self.Augmentor.augment(images=x_fake, td_prob=self.td_prob, scale=image_scale, \
                                                 batch_shape=[self.batch_size, *self.image_shape]), training=True)
-            real_logits = self.D(self.Augmentor(images=x_real, td_prob=self.td_prob, \
+            real_logits = self.D(self.Augmentor.augment(images=x_real, td_prob=self.td_prob, scale=image_scale, \
                                                 batch_shape=[self.batch_size, *self.image_shape]), training=True)
             cost = ops.d_loss_fn(fake_logits, real_logits)
-            gp = self.gradient_penalty(partial(self.D, training=True), x_real, x_fake)
+            gp = self.gradient_penalty(partial(self.D, training=True), x_real/image_scale, x_fake/image_scale)
             cost += self.grad_penalty_weight * gp
         grad = t.gradient(cost, self.D.trainable_variables)
         self.d_opt.apply_gradients(zip(grad, self.D.trainable_variables))
@@ -177,13 +178,13 @@ class Augmented_WGAN_GP:
 
 
     @tf.function
-    def val_d(self, x_real):
+    def val_d(self, x_real, image_scale=255.0):
         z = random.normal((self.batch_size, 1, 1, self.z_dim))
-        x_fake = self.G(z, training=False)
-        fake_logits = self.D(x_fake, training=False)
-        real_logits = self.D(x_real, training=False)
+        x_fake = self.G(z, training=False) * image_scale
+        fake_logits = self.D(x_fake/image_scale, training=False)
+        real_logits = self.D(x_real/image_scale, training=False)
         cost = ops.d_loss_fn(fake_logits, real_logits)
-        gp = self.gradient_penalty(partial(self.D, training=False), x_real, x_fake)
+        gp = self.gradient_penalty(partial(self.D, training=False), x_real/image_scale, x_fake/image_scale)
         cost += self.grad_penalty_weight * gp
         return cost
 
@@ -200,9 +201,9 @@ class Augmented_WGAN_GP:
         return gp
 
     @tf.function
-    def generate_samples(self, z):
+    def generate_samples(self, z, image_scale=255.0):
         """Generates sample images using random values from a Gaussian distribution."""
-        return self.G(z, training=False)
+        return self.G(z, training=False) * image_scale
 
 
     def build_generator(self):

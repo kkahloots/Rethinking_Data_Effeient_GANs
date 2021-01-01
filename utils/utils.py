@@ -7,7 +7,7 @@ from tqdm.autonotebook import tqdm
 
 
 def img_merge(images, n_rows=None, n_cols=None, padding=0, pad_value=0):
-    #images = np.array(images)
+    images = np.array(images)
     n = images.shape[0]
 
     if n_rows:
@@ -29,8 +29,7 @@ def img_merge(images, n_rows=None, n_cols=None, padding=0, pad_value=0):
     for idx, image in enumerate(images):
         i = idx % n_cols
         j = idx // n_cols
-        img[j * (h + padding):j * (h + padding) + h, i * (w + padding):i *
-            (w + padding) + w, ...] = image
+        img[j * (h + padding):j * (h + padding) + h, i * (w + padding):i * (w + padding) + w, ...] = image
 
     return img.astype(np.uint8)
 

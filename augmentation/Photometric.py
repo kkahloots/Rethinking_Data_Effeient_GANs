@@ -6,21 +6,8 @@
 import cv2
 import numpy as np
 import tensorflow as tf
-import tensorflow_addons as tfa
 
-# def random_brightness(images, max_abs_change=50, batch_shape=None):
-#    return tf.clip_by_value(tf.image.random_brightness(images, max_abs_change), 0, 255)
-#
-#
-# def random_saturation(images, strength_range=[0.5, 1.5], batch_shape=None):
-#    return tf.clip_by_value(tf.image.random_saturation(images, *strength_range), 0, 255)
-#
-#
-# def random_contrast(images, strength_range=[0.5, 1.5], batch_shape=None):
-#     contrast_factor = tf.random.uniform([], *strength_range)
-#     return tf.clip_by_value(tf.raw_ops.AdjustContrastv2(images=images, contrast_factor=contrast_factor), 0, 255)
-#
-@tf.function
+
 def random_brightness(images, max_abs_change=50, batch_shape=None):
     if batch_shape is not None:
         batch_size, _, _,_ = batch_shape
@@ -31,7 +18,7 @@ def random_brightness(images, max_abs_change=50, batch_shape=None):
     images = images + magnitude
     return tf.clip_by_value(images, 0, 255)
 
-@tf.function
+
 def random_saturation(images, strength_range=[0.5, 1.5], batch_shape=None):
     if batch_shape is not None:
         batch_size, _, _,_ = batch_shape
@@ -43,7 +30,7 @@ def random_saturation(images, strength_range=[0.5, 1.5], batch_shape=None):
     images = (images - images_mean) * magnitude + images_mean
     return tf.clip_by_value(images, 0, 255)
 
-@tf.function
+
 def random_contrast(images, strength_range=[0.5, 1.5], batch_shape=None):
     if batch_shape is not None:
         batch_size, _, _,_ = batch_shape
