@@ -10,13 +10,9 @@ import augmentation.Translation as trans_aug
 import augmentation.ThreeDimension_Presective as td_pres_aug
 import numpy as np
 
-scales = [a/1000 for a in range(80, 121)]
-d_scales = [a/100 for a in range(150, 301)]
-td_scales = [a/100 for a in range(80, 121)]
-
-
-def AugmentObject(images, td_prob=0.3, scale=255.0, batch_shape=None):
-    aug_3d = False#np.random.choice([False, True], p=[1-td_prob, td_prob])
+def AugmentObject(images, td_prob=0.25, scale=255.0, batch_shape=None):
+    td_scales = [a / 100 for a in range(80, 121)]
+    aug_3d = np.random.choice([False, True], p=[1-td_prob, td_prob])
     if aug_3d:
         done = True
         functions_list = random.choice(augmentation3d_functions)
@@ -39,7 +35,8 @@ def AugmentObject(images, td_prob=0.3, scale=255.0, batch_shape=None):
     return images/scale
 
 
-def AugmentNature(images, td_prob=0.3, scale=255.0, batch_shape=None):
+def AugmentNature(images, td_prob=0.25, scale=255.0, batch_shape=None):
+    td_scales = [a / 100 for a in range(80, 121)]
     aug_3d = np.random.choice([False, True], p=[1-td_prob, td_prob])
     if aug_3d:
         done = True
@@ -111,96 +108,118 @@ def distort_random(images, batch_shape=None):
 
 
 def shift_random(images, batch_shape=None):
+    scales = [a / 1000 for a in range(80, 121)]
     r = random.choice(scales)
     images = pres_aug.rand_shift(images=images, batch_shape=batch_shape, ratio=r)
     return images
 
 
 def shear_left_right_random(images, batch_shape=None):
+    scales = [a / 1000 for a in range(80, 121)]
     l = random.choice(scales)
     images = trans_aug.shear_left_right(images=images, batch_shape=batch_shape, shear_lambda=l)
     return images
 
 
 def translate_top_down_random(images, batch_shape=None):
+    scales = [a / 1000 for a in range(80, 121)]
     l = random.choice(scales)
     images = trans_aug.shear_top_down(images=images, batch_shape=batch_shape, shear_lambda=l)
     return images
 
 
 def shear_right_left_random(images, batch_shape=None):
+    scales = [a / 1000 for a in range(80, 121)]
     l = random.choice(scales)
     images = trans_aug.shear_left_right(images=images, batch_shape=batch_shape, shear_lambda=-l)
     return images
 
 def shear_down_top_random(images, batch_shape=None):
+    scales = [a / 1000 for a in range(80, 121)]
     l = random.choice(scales)
     images = trans_aug.shear_down_top(images=images, batch_shape=batch_shape, shear_lambda=-l)
     return images
 
 def shear_top_down_random(images, batch_shape=None):
+    scales = [a / 1000 for a in range(80, 121)]
     l = random.choice(scales)
     images = trans_aug.shear_top_down(images=images, batch_shape=batch_shape, shear_lambda=-l)
     return images
 
 def skew_left_right_random(images, batch_shape=None):
-    ll = random.choice(scales)
-    lr = random.choice(scales)
+    scales = [a / 1000 for a in range(80, 301)]
+    d_scales = [a / 100 for a in range(150, 301)]
+    ll = random.choice(scales)/random.choice(d_scales)
+    lr = random.choice(scales)/random.choice(d_scales)
     images = trans_aug.skew_left_right(images=images, batch_shape=batch_shape, \
-                                       l_shear_lambda=ll/random.choice(d_scales), r_shear_lambda=lr/random.choice(d_scales))
+                                       l_shear_lambda=ll, r_shear_lambda=lr)
     return images
 
 
 def skew_top_left_random(images, batch_shape=None):
-    lt = random.choice(scales)
-    ll = random.choice(scales)
+    scales = [a / 1000 for a in range(80, 301)]
+    d_scales = [a / 100 for a in range(150, 301)]
+    ll = random.choice(scales)/random.choice(d_scales)
+    lt = random.choice(scales)/random.choice(d_scales)
     images = trans_aug.skew_top_left(images=images, batch_shape=batch_shape, \
-                                     t_shear_lambda=lt/random.choice(d_scales), l_shear_lambda=ll/random.choice(d_scales))
+                                     t_shear_lambda=lt, l_shear_lambda=ll)
     return images
 
 def skew_down_left(images, batch_shape=None):
-    lt = random.choice(scales) * -1
-    ll = random.choice(scales)
+    scales = [a / 1000 for a in range(80, 301)]
+    d_scales = [a / 100 for a in range(150, 301)]
+    lt = random.choice(scales)/random.choice(d_scales)
+    ll = random.choice(scales)/random.choice(d_scales)
+    lt *=  -1
     images = trans_aug.skew_top_left(images=images, batch_shape=batch_shape, \
-                                     t_shear_lambda=lt/random.choice(d_scales), \
-                                     l_shear_lambda=ll/random.choice(d_scales))
+                                     t_shear_lambda=lt, \
+                                     l_shear_lambda=ll)
     return images
 
 
 def shear_top_right(images, batch_shape=None):
-    lt = random.choice(scales) * -1
-    ll = random.choice(scales) * -1
+    scales = [a / 1000 for a in range(80, 301)]
+    d_scales = [a / 100 for a in range(150, 301)]
+    lt = random.choice(scales)/random.choice(d_scales)
+    ll = random.choice(scales)/random.choice(d_scales)
+    lt  *= -1
+    ll *= -1
     images = trans_aug.shear_left_down(images=images, batch_shape=batch_shape, \
-                                       t_shear_lambda=lt/random.choice(d_scales), \
-                                       l_shear_lambda=ll/random.choice(d_scales))
+                                       t_shear_lambda=lt, \
+                                       l_shear_lambda=ll)
     return images
 
 
 def shear_left_down(images, batch_shape=None):
-    lt = random.choice(scales)
-    ll = random.choice(scales)
+    scales = [a / 1000 for a in range(80, 301)]
+    d_scales = [a / 100 for a in range(150, 301)]
+    lt = random.choice(scales)/random.choice(d_scales)
+    ll = random.choice(scales)/random.choice(d_scales)
     images = trans_aug.shear_left_down(images=images, batch_shape=batch_shape, \
-                                       t_shear_lambda=lt/random.choice(d_scales), \
-                                       l_shear_lambda=ll/random.choice(d_scales))
+                                       t_shear_lambda=lt, \
+                                       l_shear_lambda=ll)
     return images
 
 
 def skew_left_top_random(images, batch_shape=None):
-
-    lt = random.choice(scales)
-    ll = random.choice(scales)
+    scales = [a / 1000 for a in range(80, 301)]
+    d_scales = [a / 100 for a in range(150, 301)]
+    lt = random.choice(scales)/random.choice(d_scales)
+    ll = random.choice(scales)/random.choice(d_scales)
     images = trans_aug.skew_left_top(images=images, batch_shape=batch_shape, \
-                                     t_shear_lambda=lt/random.choice(d_scales), \
-                                     l_shear_lambda=ll/random.choice(d_scales))
+                                     t_shear_lambda=lt, \
+                                     l_shear_lambda=ll)
     return images
 
 
 def skew_top_down_random(images, batch_shape=None):
-    ll = random.choice(scales)
-    lr = random.choice(scales)
+    scales = [a / 1000 for a in range(80, 301)]
+    d_scales = [a / 100 for a in range(150, 301)]
+    lr = random.choice(scales)/random.choice(d_scales)
+    ll = random.choice(scales)/random.choice(d_scales)
     images = trans_aug.skew_top_down(images=images, batch_shape=batch_shape, \
-                                     t_shear_lambda=ll/random.choice(d_scales), \
-                                     d_shear_lambda=lr/random.choice(d_scales))
+                                     t_shear_lambda=ll, \
+                                     d_shear_lambda=lr)
 
     return images
 
@@ -235,20 +254,53 @@ augmentation_functions = list(set([ tuple(set(fn)) for fn in list(itertools.prod
                                                 photo_aug_list,
                                                 distort_aug_list,
                                                 mirror_aug_list,
-                                                pres_aug_list , trans_aug_list,
+                                                pres_aug_list +
+                                                trans_aug_list,
                                                 color_aug_list
-                                                ))]))
+                                                ))])) + \
+                         [tuple(set(fn)) for fn in  list(itertools.combinations_with_replacement(list(set(photo_aug_list)) + \
+                                                        list(set(distort_aug_list)) + \
+                                                        list(set(mirror_aug_list)) + \
+                                                        list(set(trans_aug_list)) + \
+                                                        list(set(color_aug_list)), 3 ))] + \
+                         [tuple(set(fn)) for fn in  list(itertools.combinations_with_replacement(list(set(photo_aug_list)) + \
+                                                        list(set(distort_aug_list)) + \
+                                                        list(set(mirror_aug_list)) + \
+                                                        list(set(pres_aug_list)) + \
+                                                        list(set(color_aug_list)), 3 ))]
+
 
 nature_augmentation_functions = list(set([ tuple(set(fn)) for fn in list(itertools.product(photo_aug_list,
                                                 distort_aug_list,
                                                 mirror_aug_list,
-                                                pres_aug_list, trans_aug_list,
+                                                pres_aug_list,
+                                                trans_aug_list,
                                                 color_aug_list
-                                                ))]))
-
+                                                ))])) + \
+                         [tuple(set(fn)) for fn in  list(itertools.combinations_with_replacement(list(set(photo_aug_list)) + \
+                                                        list(set(distort_aug_list)) + \
+                                                        list(set(mirror_aug_list)) + \
+                                                        list(set(trans_aug_list)) + \
+                                                        list(set(color_aug_list)), 3 ))] + \
+                         [tuple(set(fn)) for fn in  list(itertools.combinations_with_replacement(list(set(photo_aug_list)) + \
+                                                        list(set(distort_aug_list)) + \
+                                                        list(set(mirror_aug_list)) + \
+                                                        list(set(pres_aug_list)) + \
+                                                        list(set(color_aug_list)), 3 ))]
 augmentation3d_functions = list(set([ tuple(set(fn)) for fn in list(itertools.product(
-                                                photo_aug_list, color_aug_list,
+                                                photo_aug_list,
+                                                color_aug_list,
                                                 distort_aug_list,
                                                 mirror_aug_list,
                                                 pres_aug_list + trans_aug_list
-                                                ))]))
+                                                ))])) + \
+                         [tuple(set(fn)) for fn in  list(itertools.combinations_with_replacement(list(set(photo_aug_list)) + \
+                                                        list(set(distort_aug_list)) + \
+                                                        list(set(mirror_aug_list)) + \
+                                                        list(set(trans_aug_list)) + \
+                                                        list(set(color_aug_list)), 3 ))] + \
+                         [tuple(set(fn)) for fn in  list(itertools.combinations_with_replacement(list(set(photo_aug_list)) + \
+                                                        list(set(distort_aug_list)) + \
+                                                        list(set(mirror_aug_list)) + \
+                                                        list(set(pres_aug_list)) + \
+                                                        list(set(color_aug_list)), 3 ))]

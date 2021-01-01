@@ -72,50 +72,21 @@ def _resize_place_ROIs(image, bg, ROIs, scales):
     return bg
 
 
-def _resize_place_ROIs_with_BB(image, bg, ROIs, scales):
-    for x, y, w, h, approx in ROIs:
-        mask = np.zeros(bg.shape[:2], np.uint8)
-        cv2.drawContours(mask, [cv2.convexHull(approx)], -1, (255, 255, 255), -1, cv2.LINE_AA)
-        obj = cv2.bitwise_and(image, image, mask=mask)
-
-        ix = np.where(obj == 0)
-        obj[ix] = 255
-
-        scale = (float(random.choice(scales)), float(random.choice(scales)))  # define your scale
-        scaled_obj = cv2.resize(obj[y:y + h, x:x + w], None, fx=scale[0], fy=scale[1])  # scale image
-
-        ix = np.where(scaled_obj == 255)
-        scaled_obj[ix] = 0
-
-        sh, sw = scaled_obj.shape[:2]  # get h, w of scaled image
-
-        padded_scaled = np.zeros(bg.shape, dtype=np.uint8)  # using img.shape to obtain #channels
-        pw, ph, _ = padded_scaled[y:y + sh, x:x + sw].shape
-        padded_scaled[y:y + sh, x:x + sw] = cv2.resize(scaled_obj, (ph, pw))
-        ix = np.where(padded_scaled != 0)
-        bg[ix] = padded_scaled[ix]
-
-        cv2.rectangle(bg, (x, y), (x+sw, y+sh), (36, 255, 12), 1)
-
-    return bg
-
 
 def aug_bg_patches(images, scales, aug_fun, batch_shape=None):
 
-    def _py_detect_patches(images, scales):
-        images = images.numpy().astype(np.uint8)
+    def _py_detect_patches(images):
         bgs = []
-        for image in images:
+        for i in range(len(images)):
+            image = images[i].numpy().astype(np.uint8)
             ROIs_sample = _sample_ROI(image)
             bg = _color_bg(image, image.copy(), ROIs_sample)
-            bg = cv2.cvtColor(aug_fun(tf.expand_dims(bg, 0)).numpy()[0].astype(np.uint8), cv2.IMREAD_COLOR)
+            bg = cv2.cvtColor(aug_fun(images=tf.expand_dims(bg, 0), batch_shape=batch_shape).numpy()[0].astype(np.uint8), cv2.IMREAD_COLOR)
             bg = _resize_place_ROIs(image, bg, ROIs_sample, scales)
 
             bgs += [bg]
-        return np.stack(bgs)
+        return np.array(bgs)
 
-    if batch_shape is None:
-        batch_shape = [a for a in tf.shape(images)]
-    augmented = tf.py_function(_py_detect_patches, [images, scales], tf.float32)
+    augmented = tf.py_function(_py_detect_patches, [images], tf.float32)
 
-    return tf.reshape(augmented, batch_shape)
+    return augmented
