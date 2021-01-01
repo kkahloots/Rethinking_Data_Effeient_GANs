@@ -9,7 +9,7 @@ import augmentation.Photometric as photo_aug
 import augmentation.Translation as trans_aug
 import augmentation.ThreeDimension_Presective as td_pres_aug
 import numpy as np
-import sys
+
 
 
 class Augmentor:
@@ -35,17 +35,12 @@ class Augmentor:
             aug_func_name = aug_func_name.replace(fn.__name__, f"3d{fn.__name__}")
             aug_func_name = aug_func_name.replace('[', '').replace(']', '').replace(',', '').replace(' ', '_').replace("'",
                                                                                                                        '')
-        #print(aug_func_name)
-        #print()
-        #sys.stdout.flush()
 
         for f in functions_list:
             images = f(images=images, batch_shape=batch_shape)
 
         self.last_ix += 1
         self.last_ix = self.last_ix % len(self.augmentation_functions)
-        if self.last_ix==0:
-            self.augmentation_functions = random.shuffle(self.augmentation_functions)
 
         return images/scale
 
@@ -298,4 +293,4 @@ def prepare_functions_list():
         if temp_list != []:
             augmentation_functions += [temp_list]
 
-    return random.shuffle(augmentation_functions)
+    return augmentation_functions
