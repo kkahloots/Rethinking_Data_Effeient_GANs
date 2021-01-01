@@ -104,7 +104,7 @@ class Augmented_WGAN_GP:
 
             train_bar.close()
 
-            if val_dataset:
+            if val_dataset is not None:
                 val_bar = vbar(n_itr//5, epoch, epochs)
                 for itr_c, batch in zip(range(n_itr//5), val_dataset):
                     if val_bar.n >= n_itr//5:
