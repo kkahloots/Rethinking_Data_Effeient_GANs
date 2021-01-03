@@ -61,7 +61,7 @@ class Augmented_WGAN_GP:
         self.G.summary()
         self.D.summary()
 
-    def train(self, dataset, val_dataset=None, epochs=int(6e4), n_itr=100):
+    def train(self, dataset, val_dataset=None, epochs=int(6e4), n_itr=100, plot_live=True):
         try:
             z = tf.constant(np.load(f'{self.save_path}/{self.model_name}_z.npy'))
         except FileNotFoundError:
@@ -69,14 +69,16 @@ class Augmented_WGAN_GP:
             os.makedirs(self.save_path, exist_ok=True)
             np.save(f'{self.save_path}/{self.model_name}_z', z.numpy())
 
-        liveplot = PlotLosses()
+        if plot_live:
+            liveplot = PlotLosses()
         try:
             losses_list = pickle.load(open(f'{self.save_path}/{self.model_name}_losses_list.pkl', 'rb'))
         except:
             losses_list = []
 
-        for i, losses in enumerate(losses_list):
-            liveplot.update(losses, i)
+        if plot_live:
+            for i, losses in enumerate(losses_list):
+                liveplot.update(losses, i)
         
         start_epoch = len(losses_list)    
 
@@ -123,8 +125,9 @@ class Augmented_WGAN_GP:
                       'd_val_loss': d_val_loss.result()}
             losses_list += [losses]
             pickle.dump(losses_list, open(f'{self.save_path}/{self.model_name}_losses_list.pkl', 'wb'))
-            liveplot.update(losses, epoch)
-            liveplot.send()
+            if plot_live:
+                liveplot.update(losses, epoch)
+                liveplot.send()
 
             g_train_loss.reset_states()
             d_train_loss.reset_states()
