@@ -61,7 +61,7 @@ class Augmented_WGAN_GP:
         self.G.summary()
         self.D.summary()
 
-    def train(self, dataset, val_dataset=None, epochs=int(6e4), n_itr=100, plot_live=True):
+    def train(self, dataset, val_dataset=None, epochs=int(6e4), n_itr=100, plot_live=False):
         try:
             z = tf.constant(np.load(f'{self.save_path}/{self.model_name}_z.npy'))
         except FileNotFoundError:
