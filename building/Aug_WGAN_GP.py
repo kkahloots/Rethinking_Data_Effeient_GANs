@@ -121,7 +121,7 @@ class Augmented_WGAN_GP:
                     val_bar.postfix['d_val_loss'] = f'{d_val_loss.result():6.3f}'
                     val_bar.update(n=itr_c)
                 val_bar.close()
-                del train_bar
+                del val_bar
 
             losses = {'g_loss': g_train_loss.result(),
                       'd_loss': d_train_loss.result(),
