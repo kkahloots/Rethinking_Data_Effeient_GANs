@@ -2,6 +2,7 @@
 import os
 from functools import partial
 from livelossplot.plot_losses import PlotLosses
+from IPython.display import clear_output
 
 import tensorflow as tf
 import numpy as np
@@ -88,6 +89,7 @@ class Augmented_WGAN_GP:
 
 
         for epoch in range(start_epoch, epochs):
+            clear_output()
             train_bar = pbar(n_itr, epoch, epochs)
             for itr_c, batch in zip(range(n_itr), dataset):
                 if train_bar.n >= n_itr:
@@ -105,6 +107,7 @@ class Augmented_WGAN_GP:
                 train_bar.update(n=itr_c)
 
             train_bar.close()
+            del train_bar
 
             if val_dataset is not None:
                 val_bar = vbar(n_itr//5, epoch, epochs)
@@ -118,7 +121,7 @@ class Augmented_WGAN_GP:
                     val_bar.postfix['d_val_loss'] = f'{d_val_loss.result():6.3f}'
                     val_bar.update(n=itr_c)
                 val_bar.close()
-
+                del train_bar
 
             losses = {'g_loss': g_train_loss.result(),
                       'd_loss': d_train_loss.result(),
