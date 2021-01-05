@@ -24,7 +24,6 @@ class Augmented_WGAN_GP:
                  image_shape,
                  image_scale=255.0,
                  td_prob=0.25,
-                 aug_level=4,
                  save_path=None,
                  batch_size=36,
                  z_dim=256,
@@ -40,7 +39,6 @@ class Augmented_WGAN_GP:
         self.save_path = save_path
         self.z_dim = z_dim
         self.batch_size = batch_size
-        self.aug_level = aug_level
         self.image_shape = image_shape
         self.image_scale = image_scale
         self.n_critic = n_critic
@@ -63,7 +61,7 @@ class Augmented_WGAN_GP:
         self.G.summary()
         self.D.summary()
 
-    def train(self, dataset, val_dataset=None, epochs=int(6e4), n_itr=100, plot_live=False):
+    def train(self, dataset, val_dataset=None, epochs=int(6e4), n_itr=100, generate_epoch=250, plot_live=False):
         try:
             z = tf.constant(np.load(f'{self.save_path}/{self.model_name}_z.npy'))
         except FileNotFoundError:
@@ -146,7 +144,7 @@ class Augmented_WGAN_GP:
                     self.G.save_weights(filepath=f'{self.save_path}/{self.model_name}_generator{epoch}')
                     self.D.save_weights(filepath=f'{self.save_path}/{self.model_name}_discriminator{epoch}')
 
-            if epoch%250 ==1:
+            if epoch%generate_epoch ==1:
                 samples = self.generate_samples(z, image_scale=self.image_scale)
                 img_path = f'{self.save_path}/images/{self.model_name}'
                 os.makedirs(img_path, exist_ok=True)
