@@ -210,6 +210,7 @@ def skew_top_down_random(images, batch_shape=None):
 
     return images
 
+
 def cutout_random(images, batch_shape=None):
     scales = [a/100 for a in range(10, 51)]
     r = random.choice(scales)
@@ -233,28 +234,32 @@ color_aug_list = [clone, transform_color_space, transform_color_space, transform
                          transform_color_space, transform_color_space, transform_color_space, \
                          transform_color_space, transform_color_space, transform_color_space]
 
-trans_aug_list = [clone, shear_top_down_random, shear_left_right_random, shear_down_top_random, \
-                         shear_right_left_random, skew_left_right_random, skew_top_down_random, \
-                         skew_top_left_random, skew_left_top_random, skew_down_left, shear_left_down, shear_top_right ]
+shear_aug_list = [clone, shear_top_down_random, shear_left_right_random, shear_down_top_random, \
+                         shear_right_left_random,  shear_left_down, shear_top_right ]
+
+skew_aug_list = [clone, skew_left_right_random, skew_top_down_random, \
+                        skew_top_left_random, skew_left_top_random, skew_down_left]
 
 pres_aug_list =  [clone, shift_random, shift_random, shift_random, \
-                                         shift_random, shift_random, shift_random, \
-                                         shift_random, shift_random, shift_random]
+                         shift_random, shift_random, shift_random, \
+                         shift_random, shift_random, shift_random]
 
 cutout_aug_list =  [clone, cutout_random, cutout_random, cutout_random, \
-                                         cutout_random, cutout_random, cutout_random, \
-                                         cutout_random, cutout_random, cutout_random]
+                           cutout_random, cutout_random, cutout_random, \
+                           cutout_random, cutout_random, cutout_random]
 
 
-all_list = photo_aug_list + distort_aug_list+ mirror_aug_list+ \
-                                 color_aug_list+ trans_aug_list+ pres_aug_list+ cutout_aug_list
+all_list = photo_aug_list + distort_aug_list + mirror_aug_list + \
+           color_aug_list + shear_aug_list   + \
+           skew_aug_list  + pres_aug_list    + cutout_aug_list
+
 
 all_fns_list = \
 [ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 1)) ] + \
 [ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 2)) ] + \
 [ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 3)) ] + \
 [ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 4)) ] + \
-[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 5)) ]+ \
+[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 5)) ] + \
 [ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 6)) ]
 
 def prepare_functions_list():
@@ -291,7 +296,7 @@ def prepare_functions_list():
                     temp_list += [f]
                     color_aug_found = True
 
-            elif f in trans_aug_list:
+            elif f in skew_aug_list+shear_aug_list:
                 if not trans_aug_found:
                     temp_list += [f]
                     trans_aug_found = True
