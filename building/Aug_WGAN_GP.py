@@ -171,11 +171,11 @@ class Augmented_WGAN_GP:
             x_fake = self.G(z, training=True) * image_scale
             fake_logits = self.D(self.Augment(images=x_fake, td_prob=self.td_prob, scale=image_scale, \
                                                         batch_shape=[self.batch_size, *self.image_shape]), training=True)
-            x_real = self.Augment(images=x_real, td_prob=self.td_prob, scale=1.0, \
+            x_real = self.Augment(images=x_real, td_prob=self.td_prob, scale=image_scale, \
                                                         batch_shape=[self.batch_size, *self.image_shape])
             real_logits = self.D(x_real, training=True)
             cost = ops.d_loss_fn(fake_logits, real_logits)
-            gp = self.gradient_penalty(partial(self.D, training=True), x_real/image_scale, x_fake/image_scale)
+            gp = self.gradient_penalty(partial(self.D, training=True), x_real, x_fake/image_scale)
             cost += self.grad_penalty_weight * gp
         grad = t.gradient(cost, self.D.trainable_variables)
         self.d_opt.apply_gradients(zip(grad, self.D.trainable_variables))
