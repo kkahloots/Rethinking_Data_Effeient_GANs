@@ -259,8 +259,8 @@ all_fns_list = \
 [ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 2)) ] + \
 [ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 3)) ] + \
 [ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 4)) ] + \
-[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 5)) ] + \
-[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 6)) ]
+[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 5)) ]
+
 
 def prepare_functions_list():
     augmentation_functions = []
