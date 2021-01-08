@@ -4,6 +4,7 @@ import itertools
 import augmentation.Coloring as color_aug
 import augmentation.Distortion as distort_aug
 import augmentation.Mirror as mirror_aug
+import augmentation.Cutout as cutout_aug
 import augmentation.Perspective as pres_aug
 import augmentation.Photometric as photo_aug
 import augmentation.Translation as trans_aug
@@ -209,6 +210,12 @@ def skew_top_down_random(images, batch_shape=None):
 
     return images
 
+def cutout_random(images, batch_shape=None):
+    scales = [a/100 for a in range(10, 51)]
+    r = random.choice(scales)
+    images = cutout_aug.cutout(images=images, batch_shape=batch_shape, ratio=r)
+    return images
+
 
 photo_aug_list = [clone, add_random_contrast, add_random_contrast, add_random_brightness, \
                          add_random_contrast, add_random_contrast, add_random_brightness,
@@ -234,15 +241,21 @@ pres_aug_list =  [clone, shift_random, shift_random, shift_random, \
                                          shift_random, shift_random, shift_random, \
                                          shift_random, shift_random, shift_random]
 
+cutout_aug_list =  [clone, cutout_random, cutout_random, cutout_random, \
+                                         cutout_random, cutout_random, cutout_random, \
+                                         cutout_random, cutout_random, cutout_random]
+
+
 all_list = photo_aug_list + distort_aug_list+ mirror_aug_list+ \
-                                 color_aug_list+ trans_aug_list+ pres_aug_list
+                                 color_aug_list+ trans_aug_list+ pres_aug_list+ cutout_aug_list
 
 all_fns_list = \
 [ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 1)) ] + \
 [ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 2)) ] + \
 [ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 3)) ] + \
 [ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 4)) ] + \
-[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 5)) ]
+[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 5)) ]+ \
+[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 6)) ]
 
 def prepare_functions_list():
     augmentation_functions = []
@@ -255,6 +268,7 @@ def prepare_functions_list():
         color_aug_found = False
         trans_aug_found = False
         pres_aug_found = False
+        cutout_aug_found = False
 
         for f in fns:
             if f in photo_aug_list:
@@ -286,6 +300,11 @@ def prepare_functions_list():
                 if not pres_aug_found:
                     temp_list += [f]
                     pres_aug_found = True
+
+            elif f in cutout_aug_list:
+                if not cutout_aug_found:
+                    temp_list += [f]
+                    cutout_aug_found = True
 
             else:
                 pass

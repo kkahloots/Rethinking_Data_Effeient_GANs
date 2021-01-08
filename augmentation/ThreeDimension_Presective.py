@@ -13,7 +13,7 @@ def _sample_ROI(image):
 
     cnts = cv2.findContours(bg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
-    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:10]
+    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)#[:10]
 
     ROIs = []
     for c in cnts[::-1]:
@@ -70,7 +70,6 @@ def _resize_place_ROIs(image, bg, ROIs, scales):
         bg[ix] = padded_scaled[ix]
 
     return bg
-
 
 
 def aug_bg_patches(images, scales, aug_fun, batch_shape=None):
