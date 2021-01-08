@@ -88,7 +88,8 @@ class Augmented_WGAN_GP:
 
 
         for epoch in range(start_epoch, epochs):
-            clear_output()
+            if not plot_live:
+                clear_output()
             train_bar = pbar(n_itr, epoch, epochs)
             for itr_c, batch in zip(range(n_itr), dataset):
                 if train_bar.n >= n_itr:
