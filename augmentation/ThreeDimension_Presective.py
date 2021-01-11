@@ -25,7 +25,7 @@ def _sample_ROI(image):
     return ROIs_sample
 
 def _color_bg(image, bg, ROIs):
-    radius = 10 # bg.shape[0] // 2
+    radius = 25 # bg.shape[0] // 2
 
     for x, y, w, h, approx in ROIs:
         mask = np.zeros(bg.shape[:2], np.uint8)
