@@ -76,7 +76,7 @@ def transform_color_space(images, batch_shape=None):
 
 
 def rotate_random(images, batch_shape=None):
-    a = random.randint(-35, 35)
+    a = random.randint(-25, 25)
     images = pres_aug.rotate(images=images, batch_shape=batch_shape, angles=a)
     return images
 
