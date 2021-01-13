@@ -76,9 +76,16 @@ def aug_bg_patches(images, scales, aug_fun, batch_shape=None):
 
     def _py_detect_patches(images):
         bgs = []
+        bg = None
+        if np.random.choice([False, True], p=[1 - 0.25, 0.25]):
+            bg = images[random.choice(range(len(images)))].numpy().astype(np.uint8)
+
+
         for i in range(len(images)):
             image = images[i].numpy().astype(np.uint8)
             ROIs_sample = _sample_ROI(image)
+            if bg is None:
+                bg = image
             #bg = _color_bg(image, image.copy(), ROIs_sample)
             bg = cv2.cvtColor(aug_fun(images=tf.expand_dims(bg, 0), batch_shape=batch_shape).numpy()[0].astype(np.uint8), cv2.IMREAD_COLOR)
             bg = _resize_place_ROIs(image, bg, ROIs_sample, scales)
