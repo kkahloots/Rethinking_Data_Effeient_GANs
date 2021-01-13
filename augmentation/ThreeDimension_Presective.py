@@ -79,7 +79,7 @@ def aug_bg_patches(images, scales, aug_fun, batch_shape=None):
         for i in range(len(images)):
             image = images[i].numpy().astype(np.uint8)
             ROIs_sample = _sample_ROI(image)
-            bg = _color_bg(image, image.copy(), ROIs_sample)
+            #bg = _color_bg(image, image.copy(), ROIs_sample)
             bg = cv2.cvtColor(aug_fun(images=tf.expand_dims(bg, 0), batch_shape=batch_shape).numpy()[0].astype(np.uint8), cv2.IMREAD_COLOR)
             bg = _resize_place_ROIs(image, bg, ROIs_sample, scales)
 
