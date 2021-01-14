@@ -168,9 +168,9 @@ class Augmented_WGAN_GP:
         z = random.normal((self.batch_size, 1, 1, self.z_dim))
         with tf.GradientTape() as t:
             x_fake = self.G(z, training=True) * image_scale
-            fake_logits = self.D(self.Augment(images=x_fake, td_prob=self.td_prob, scale=image_scale, \
+            fake_logits = self.D(self.Augment(images=x_fake, scale=image_scale, \
                                                         batch_shape=[self.batch_size, *self.image_shape]), training=True)
-            x_real = self.Augment(images=x_real, td_prob=self.td_prob, scale=image_scale, \
+            x_real = self.Augment(images=x_real, scale=image_scale, \
                                                         batch_shape=[self.batch_size, *self.image_shape])
             real_logits = self.D(x_real, training=True)
             cost = ops.d_loss_fn(fake_logits, real_logits)
