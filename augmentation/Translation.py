@@ -425,6 +425,6 @@ def get_skew_matrix(w, h, skew_type="RANDOM", magnitude=10):
 
     perspective_skew_coefficients_matrix = np.dot(np.linalg.pinv(A), B)
     perspective_skew_coefficients_matrix = np.array(perspective_skew_coefficients_matrix).reshape(8)
-    return perspective_skew_coefficients_matrix
+    return tf.to_float(perspective_skew_coefficients_matrix)
 
 
