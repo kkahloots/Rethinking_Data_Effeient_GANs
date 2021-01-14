@@ -15,33 +15,20 @@ import numpy as np
 
 class Augmentor:
     def __init__(self):
-        self.augmentation_functions = prepare_functions_list()
-        self.last_ix = 0
+        self.augmentation_functions = AUGMENT_FNS
 
 
-    def augment(self, images, td_prob=0.25, scale=255.0, batch_shape=None):
-        functions_list = self.augmentation_functions[self.last_ix]
+    def augment(self, images, scale=255.0, batch_shape=None, print_fn=False):
+        func_keys = random.sample([*self.augmentation_functions.keys()], random.randint(1, 5))
+
+        functions_list = [random.sample(self.augmentation_functions[k],1)[0] for k in func_keys]
         aug_func_name = str([f.__name__ for f in functions_list])
-        if np.random.choice([False, True], p=[1 - td_prob, td_prob]):
-            td_scales = [a / 100 for a in range(80, 121)]
-            done = True
-            while done:
-                fn = random.choice(functions_list)
-                if fn in photo_aug_list:
-                    continue
-                else:
-                    done = False
-            aug_patch_fn = lambda images, batch_shape: td_pres_aug.aug_bg_patches(images, td_scales, fn, batch_shape)
-            functions_list = [aug_patch_fn if f == fn else f for f in functions_list]
-            aug_func_name = aug_func_name.replace(fn.__name__, f"3d{fn.__name__}")
-            aug_func_name = aug_func_name.replace('[', '').replace(']', '').replace(',', '').replace(' ', '_').replace("'",
-                                                                                                                       '')
+
+        if print_fn:
+            print(aug_func_name)
 
         for f in functions_list:
             images = f(images=images, batch_shape=batch_shape)
-
-        self.last_ix += 1
-        self.last_ix = self.last_ix % len(self.augmentation_functions)
 
         return images/scale
 
@@ -236,109 +223,19 @@ def cutout_random(images, batch_shape=None):
     return images
 
 
-photo_aug_list = [clone, add_random_contrast, add_random_contrast, add_random_brightness, \
-                         add_random_contrast, add_random_contrast, add_random_brightness,
-                         add_random_contrast, add_random_contrast, add_random_brightness]
+AUGMENT_FNS = {
+    'clone' : [clone],
+    'photo': [add_random_contrast, add_random_contrast, add_random_brightness],
+    'color': [transform_color_space],
+    'cutout': [cutout_random],
+    'distort': [distort_random],
+    'shear': [shear_top_down_random, shear_left_right_random, shear_down_top_random, \
+                    shear_right_left_random,  shear_left_down, shear_top_right ],
+    'mirror': [flip_left_right],
+    'skew': [skew_left_right_random, skew_top_down_random, skew_top_left_random, skew_left_top_random, skew_down_left],
+    'skew2':  [skew_random1, skew_random2, skew_random3, skew_random4],
+    'shift':  [shift_random]
 
-distort_aug_list = [clone, distort_random, distort_random, distort_random, \
-                           distort_random, distort_random, distort_random, \
-                           distort_random, distort_random, distort_random]
-
-mirror_aug_list = [clone, flip_left_right, flip_left_right, flip_left_right, \
-                          flip_left_right, flip_left_right, flip_left_right, \
-                          flip_left_right, flip_left_right, flip_left_right]
-
-color_aug_list = [clone, transform_color_space, transform_color_space, transform_color_space, \
-                         transform_color_space, transform_color_space, transform_color_space, \
-                         transform_color_space, transform_color_space, transform_color_space]
-
-shear_aug_list = [clone, shear_top_down_random, shear_left_right_random, shear_down_top_random, \
-                         shear_right_left_random,  shear_left_down, shear_top_right ]
-
-skew_aug_list = [clone, skew_left_right_random, skew_top_down_random, \
-                        skew_top_left_random, skew_left_top_random, skew_down_left]
-
-skew2_aug_list = [clone, skew_random1, skew_random2, skew_random1, skew_random2, \
-                        skew_random3, skew_random4, skew_random3, skew_random4]
+}
 
 
-pres_aug_list =  [clone, shift_random, shift_random, shift_random, \
-                         shift_random, shift_random, shift_random, \
-                         shift_random, shift_random, shift_random]
-
-cutout_aug_list =  [clone, cutout_random, cutout_random, cutout_random, \
-                           cutout_random, cutout_random, cutout_random, \
-                           cutout_random, cutout_random, cutout_random]
-
-
-
-
-all_list = photo_aug_list + distort_aug_list + mirror_aug_list + \
-           color_aug_list + shear_aug_list   + skew2_aug_list +\
-           skew_aug_list  + pres_aug_list    + cutout_aug_list
-
-
-all_fns_list = \
-[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 1)) ] + \
-[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 2)) ] + \
-[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 3)) ] + \
-[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 4)) ] + \
-[ tuple(set(fns)) for fns in list(itertools.combinations_with_replacement(all_list, 5)) ]
-
-
-def prepare_functions_list():
-    augmentation_functions = []
-    for fns in all_fns_list:
-        temp_list = []
-
-        photo_aug_found = False
-        distort_aug_found = False
-        mirror_aug_found = False
-        color_aug_found = False
-        trans_aug_found = False
-        pres_aug_found = False
-        cutout_aug_found = False
-
-        for f in fns:
-            if f in photo_aug_list:
-                if not photo_aug_found:
-                    temp_list += [f]
-                    photo_aug_found = True
-
-            elif f in distort_aug_list:
-                if not distort_aug_found:
-                    temp_list += [f]
-                    distort_aug_found = True
-
-            elif f in mirror_aug_list:
-                if not mirror_aug_found:
-                    temp_list += [f]
-                    mirror_aug_found = True
-
-            elif f in color_aug_list:
-                if not color_aug_found:
-                    temp_list += [f]
-                    color_aug_found = True
-
-            elif f in skew_aug_list+skew2_aug_list+shear_aug_list:
-                if not trans_aug_found:
-                    temp_list += [f]
-                    trans_aug_found = True
-
-            elif f in pres_aug_list:
-                if not pres_aug_found:
-                    temp_list += [f]
-                    pres_aug_found = True
-
-            elif f in cutout_aug_list:
-                if not cutout_aug_found:
-                    temp_list += [f]
-                    cutout_aug_found = True
-
-            else:
-                pass
-
-        if temp_list != []:
-            augmentation_functions += [temp_list]
-
-    return augmentation_functions

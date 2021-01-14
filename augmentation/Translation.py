@@ -3,6 +3,8 @@ import tensorflow_addons as tfa
 import tensorflow as tf
 from math import floor, ceil
 import random
+import numpy as np
+
 
 def shear_left_right(images, shear_lambda, batch_shape=None):
     if batch_shape is not None:
