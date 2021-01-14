@@ -164,6 +164,24 @@ def skew_down_left(images, batch_shape=None):
     return images
 
 
+
+def skew_random1(images, batch_shape=None):
+    images = trans_aug.skew_random_1(images=images, batch_shape=batch_shape)
+    return images
+
+def skew_random2(images, batch_shape=None):
+    images = trans_aug.skew_random_2(images=images, batch_shape=batch_shape)
+    return images
+
+def skew_random3(images, batch_shape=None):
+    images = trans_aug.skew_random_3(images=images, batch_shape=batch_shape)
+    return images
+
+def skew_random4(images, batch_shape=None):
+    images = trans_aug.skew_random_4(images=images, batch_shape=batch_shape)
+    return images
+
+
 def shear_top_right(images, batch_shape=None):
     scales = [a / 1000 for a in range(80, 301)]
     d_scales = [a / 100 for a in range(150, 301)]
@@ -240,6 +258,10 @@ shear_aug_list = [clone, shear_top_down_random, shear_left_right_random, shear_d
 skew_aug_list = [clone, skew_left_right_random, skew_top_down_random, \
                         skew_top_left_random, skew_left_top_random, skew_down_left]
 
+skew2_aug_list = [clone, skew_random1, skew_random2, skew_random1, skew_random2, \
+                        skew_random3, skew_random4, skew_random3, skew_random4]
+
+
 pres_aug_list =  [clone, shift_random, shift_random, shift_random, \
                          shift_random, shift_random, shift_random, \
                          shift_random, shift_random, shift_random]
@@ -249,8 +271,10 @@ cutout_aug_list =  [clone, cutout_random, cutout_random, cutout_random, \
                            cutout_random, cutout_random, cutout_random]
 
 
+
+
 all_list = photo_aug_list + distort_aug_list + mirror_aug_list + \
-           color_aug_list + shear_aug_list   + \
+           color_aug_list + shear_aug_list   + skew2_aug_list +\
            skew_aug_list  + pres_aug_list    + cutout_aug_list
 
 
@@ -296,7 +320,7 @@ def prepare_functions_list():
                     temp_list += [f]
                     color_aug_found = True
 
-            elif f in skew_aug_list+shear_aug_list:
+            elif f in skew_aug_list+skew2_aug_list+shear_aug_list:
                 if not trans_aug_found:
                     temp_list += [f]
                     trans_aug_found = True
