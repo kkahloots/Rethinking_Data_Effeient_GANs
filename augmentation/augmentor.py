@@ -18,26 +18,27 @@ class Augmentor:
         self.augmentation_functions = AUGMENT_FNS
 
 
-    def augment(self, images, scale=255.0, batch_shape=None, print_fn=False):
-        func_keys = random.sample([*self.augmentation_functions.keys()], random.randint(1, 3))
+    def augment(self, images, scale=255.0, batch_shape=None, print_fn=False, functions_list=None):
+        if functions_list is None:
+            func_keys = random.sample([*self.augmentation_functions.keys()], random.randint(1, 3))
 
-        functions_list = [random.sample(self.augmentation_functions[k],1)[0] for k in func_keys]
-        aug_func_name = str([f.__name__ for f in functions_list])
+            functions_list = [random.sample(self.augmentation_functions[k],1)[0] for k in func_keys]
+            aug_func_name = str([f.__name__ for f in functions_list])
 
-        td_prob =0.1
-        if np.random.choice([False, True], p=[1 - td_prob, td_prob]):
-            fn = random.choice(functions_list)
-            td_scales = [a / 100 for a in range(80, 121)]
-            aug_patch_fn = lambda images, batch_shape: td_pres_aug.aug_bg_patches(images, td_scales, fn, batch_shape)
-            functions_list = [aug_patch_fn if f == fn else f for f in functions_list]
+            td_prob =0.1
+            if np.random.choice([False, True], p=[1 - td_prob, td_prob]):
+                fn = random.choice(functions_list)
+                td_scales = [a / 100 for a in range(80, 121)]
+                aug_patch_fn = lambda images, batch_shape: td_pres_aug.aug_bg_patches(images, td_scales, fn, batch_shape)
+                functions_list = [aug_patch_fn if f == fn else f for f in functions_list]
 
-        if print_fn:
-            print(aug_func_name)
+            if print_fn:
+                print(aug_func_name)
 
         for f in functions_list:
             images = f(images=images, batch_shape=batch_shape)
 
-        return images/scale
+        return images/scale, functions_list
 
 
 def clone(images, batch_shape=None):
