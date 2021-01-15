@@ -24,6 +24,13 @@ class Augmentor:
         functions_list = [random.sample(self.augmentation_functions[k],1)[0] for k in func_keys]
         aug_func_name = str([f.__name__ for f in functions_list])
 
+        td_prob =0.1
+        if np.random.choice([False, True], p=[1 - td_prob, td_prob]):
+            fn = random.choice(functions_list)
+            td_scales = [a / 100 for a in range(80, 121)]
+            aug_patch_fn = lambda images, batch_shape: td_pres_aug.aug_bg_patches(images, td_scales, fn, batch_shape)
+            functions_list = [aug_patch_fn if f == fn else f for f in functions_list]
+
         if print_fn:
             print(aug_func_name)
 
@@ -63,7 +70,7 @@ def transform_color_space(images, batch_shape=None):
 
 
 def rotate_random(images, batch_shape=None):
-    a = random.randint(-25, 25)
+    a = random.randint(-35, 35)
     images = pres_aug.rotate(images=images, batch_shape=batch_shape, angles=a)
     return images
 
