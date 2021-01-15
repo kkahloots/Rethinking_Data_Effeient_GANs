@@ -19,7 +19,7 @@ class Augmentor:
 
 
     def augment(self, images, scale=255.0, batch_shape=None, print_fn=False):
-        func_keys = random.sample([*self.augmentation_functions.keys()], random.randint(1, 6))
+        func_keys = random.sample([*self.augmentation_functions.keys()], random.randint(1, 3))
 
         functions_list = [random.sample(self.augmentation_functions[k],1)[0] for k in func_keys]
         aug_func_name = str([f.__name__ for f in functions_list])
