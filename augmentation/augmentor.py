@@ -19,7 +19,7 @@ class Augmentor:
 
 
     def augment(self, images, scale=255.0, batch_shape=None, print_fn=False):
-        func_keys = random.sample([*self.augmentation_functions.keys()], random.randint(1, 5))
+        func_keys = random.sample([*self.augmentation_functions.keys()], random.randint(1, 6))
 
         functions_list = [random.sample(self.augmentation_functions[k],1)[0] for k in func_keys]
         aug_func_name = str([f.__name__ for f in functions_list])
@@ -229,11 +229,11 @@ AUGMENT_FNS = {
     'color': [transform_color_space],
     'cutout': [cutout_random],
     'distort': [distort_random],
-    'shear': [shear_top_down_random, shear_left_right_random, shear_down_top_random, \
-                    shear_right_left_random,  shear_left_down, shear_top_right ],
     'mirror': [flip_left_right],
-    'skew': [skew_left_right_random, skew_top_down_random, skew_top_left_random, skew_left_top_random, skew_down_left],
-    'skew2':  [skew_random1, skew_random2, skew_random3, skew_random4],
+    'skew': [shear_top_down_random, shear_left_right_random, shear_down_top_random, \
+             shear_right_left_random,  shear_left_down, shear_top_right, skew_left_right_random, \
+             skew_top_down_random, skew_top_left_random, skew_left_top_random, skew_down_left, \
+             skew_random1, skew_random2, skew_random3, skew_random4],
     'shift':  [shift_random]
 
 }
