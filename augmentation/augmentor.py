@@ -95,13 +95,6 @@ def shear_left_right_random(images, batch_shape=None):
     return images
 
 
-def translate_top_down_random(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 121)]
-    l = random.choice(scales)
-    images = trans_aug.shear_top_down(images=images, batch_shape=batch_shape, shear_lambda=l)
-    return images
-
-
 def shear_right_left_random(images, batch_shape=None):
     scales = [a / 1000 for a in range(80, 121)]
     l = random.choice(scales)
@@ -230,6 +223,7 @@ AUGMENT_FNS = {
     'cutout': [cutout_random],
     'distort': [distort_random],
     'mirror': [flip_left_right],
+    'rotate': [rotate_random],
     'skew': [shear_top_down_random, shear_left_right_random, shear_down_top_random, \
              shear_right_left_random,  shear_left_down, shear_top_right, skew_left_right_random, \
              skew_top_down_random, skew_top_left_random, skew_left_top_random, skew_down_left, \
