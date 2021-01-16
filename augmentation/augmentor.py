@@ -123,7 +123,7 @@ def shift_random(batch_shape):
     pad_size = tf.cast(
         tf.cast(tf.maximum(height, width), tf.float32) * (2.0 - 1.0) / 2 + 0.5, tf.int32)  # larger than usual (sqrt(2))
     timages = tf.pad(tf.zeros(batch_shape), [[0, 0], [pad_size] * 2, [pad_size] * 2, [0, 0]], 'REFLECT')
-    pwidth, pheight = tf.shape(timages)[1:3]
+    pwidth, pheight = timages.get_shape().as_list()[1:3]
 
     shift = tf.cast(tf.cast((pwidth, pheight), tf.float32) * random.choice([a / 1000 for a in range(80, 121)]) + 0.5,
                     tf.int32)
