@@ -501,7 +501,7 @@ def tilt_left_up_down_corner_random(batch_shape):
 
 def cutout_random(batch_shape):
     batch_size, width, height,  ch = batch_shape
-    scales = [a / 100 for a in range(10, 51)]
+    scales = [a / 100 for a in range(10, 26)]
     r = random.choice(scales)
     kwargs = {
     'mask': cutout_aug.rand_mask(batch_size, height, width, ratio=r),
@@ -511,6 +511,19 @@ def cutout_random(batch_shape):
 
     return cutout_aug.cutout, kwargs
 
+
+
+def patch_random(batch_shape):
+    batch_size, width, height,  ch = batch_shape
+    scales = [a / 100 for a in range(10, 26)]
+    r = random.choice(scales)
+    kwargs = {
+    'mask': cutout_aug.rand_mask(batch_size, height, width, ratio=r),
+    'width': width,
+    'height': height
+    }
+
+    return cutout_aug.patch, kwargs
 
 shear_fns = [shear_left_random, shear_right_random, shear_left_down_random, shear_right_down_random, \
              shear_down_left_random, shear_down_right_random, shear_left_up_random, shear_right_up_random,
@@ -530,9 +543,9 @@ tilt_fns = [tilt_random, tilt_up_down_random, tilt_left_random, tilt_left_up_dow
 
 AUGMENT_FNS = {
     'clone':   [clone],
+    'patch':   [patch_random, cutout_random],
     'photo':   [contrast_random, saturation_random, brightness_random],
     'color':   [transform_color_space],
-    'cutout':  [cutout_random],
     'distort': [distort_random],
     'mirror':  [flip_left_right],
     'shift':   [shift_random],
