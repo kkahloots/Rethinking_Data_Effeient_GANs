@@ -1,6 +1,6 @@
 import random
 import itertools
-
+import tensorflow as tf
 import augmentation.Coloring as color_aug
 import augmentation.Distortion as distort_aug
 import augmentation.Mirror as mirror_aug
@@ -12,232 +12,530 @@ import augmentation.ThreeDimension_Presective as td_pres_aug
 import numpy as np
 
 
-
 class Augmentor:
     def __init__(self):
         self.augmentation_functions = AUGMENT_FNS
 
-
-    def augment(self, images, scale=255.0, batch_shape=None, print_fn=False, functions_list=None):
+    def augment(self, images, batch_shape, scale=255.0,  print_fn=False, functions_list=None):
         if functions_list is None:
             func_keys = random.sample([*self.augmentation_functions.keys()], random.randint(1, 3))
 
-            functions_list = [random.sample(self.augmentation_functions[k],1)[0] for k in func_keys]
-            aug_func_name = str([f.__name__ for f in functions_list])
+            functions_list = [random.sample(self.augmentation_functions[k], 1)[0] for k in func_keys]
+            functions_list = list(map(lambda f: f(batch_shape) ,functions_list))
+            #
+            #
+            # td_prob = 0.1
+            # if np.random.choice([False, True], p=[1 - td_prob, td_prob]):
+            #     fn, kw = random.choice(functions_list)
+            #     print('3d', fn.__name__)
+            #
+            #     def aug_patch_fn(batch_shape):
+            #         td_scales = [a / 100 for a in range(80, 121)]
+            #         kwargs = {'fn': fn, 'scale': td_scales, 'kwargs': kw}
+            #         return td_pres_aug.aug_bg_patches, kwargs
+            #
+            #     functions_list = [aug_patch_fn(batch_shape) if f == fn else (f, kw)  for f,kw in functions_list]
 
-            td_prob =0.1
-            if np.random.choice([False, True], p=[1 - td_prob, td_prob]):
-                fn = random.choice(functions_list)
-                td_scales = [a / 100 for a in range(80, 121)]
-                aug_patch_fn = lambda images, batch_shape: td_pres_aug.aug_bg_patches(images, td_scales, fn, batch_shape)
-                functions_list = [aug_patch_fn if f == fn else f for f in functions_list]
+        if print_fn:
+            aug_func_name = str([f.__name__ for f, kw in functions_list])
+            print(aug_func_name)
 
-            if print_fn:
-                print(aug_func_name)
-
-        for f in functions_list:
-            images = f(images=images, batch_shape=batch_shape)
+        for (f, kw) in functions_list:
+            images = call_fn(f, images, kw)
 
         return images/scale, functions_list
 
 
-def clone(images, batch_shape=None):
-    return images
+def call_fn(fn, images, kwargs):
+    return fn(images, **kwargs)
 
 
-def add_random_brightness(images, batch_shape=None):
-    images = photo_aug.random_brightness(images=images, max_abs_change=100, batch_shape=batch_shape)
-    return images
+def clone(batch_shape):
+    kwargs = {}
+    def c(images, **kw):
+        return images
+    return c, kwargs
 
 
-def add_random_contrast(images, batch_shape=None):
-    images = photo_aug.random_contrast(images=images, batch_shape=batch_shape)
-    return images
+def brightness_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+       'magnitude': tf.random.uniform([batch_size, 1, 1, 1], minval=-100, maxval=100)
+    }
+    return photo_aug.random_brightness, kwargs
 
 
-def add_random_saturation(images, batch_shape=None):
-    images = photo_aug.random_saturation(images=images, batch_shape=batch_shape)
-    return images
+def contrast_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+       'magnitude': tf.random.uniform([batch_size, 1, 1, 1], minval=0.5, maxval=1.5)
+    }
+    return photo_aug.random_contrast, kwargs
 
 
-def add_additive_shade(images, batch_shape=None):
-    images = photo_aug.additive_shade(images=images, batch_shape=batch_shape)
-    return images
+def saturation_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+       'magnitude': tf.random.uniform([batch_size, 1, 1, 1], minval=0.5, maxval=1.5)
+    }
+    return photo_aug.random_saturation, kwargs
 
 
-def transform_color_space(images, batch_shape=None):
-    images = color_aug.color_space_transform(images=images, batch_shape=batch_shape)
-    return images
+def transform_color_space(batch_shape):
+    kwargs = {'flag': random.choice(color_aug.flags)}
+    return color_aug.color_space_transform, kwargs
 
 
-def rotate_random(images, batch_shape=None):
-    a = random.randint(-35, 35)
-    images = pres_aug.rotate(images=images, batch_shape=batch_shape, angles=a)
-    return images
+def rotate_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {'width': width,
+              'height': height,
+              'angles': random.randint(-35, 35)}
+    return pres_aug.rotate, kwargs
 
 
-def flip_left_right(images, batch_shape=None):
-    images = mirror_aug.flip_left_right(images=images, batch_shape=batch_shape)
-    return images
+def flip_left_right(batch_shape):
+    kwargs = {}
+    return mirror_aug.flip_left_right, kwargs
 
 
-def distort_random(images, batch_shape=None):
-    n = random.randint(5, 15)
-    s = random.randint(-5, 5)
-    images = distort_aug.distort(images=images, batch_shape=batch_shape, num_anchors=n, perturb_sigma=s)
+def distort_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    num_anchors = random.randint(5, 15)
+    perturb_sigma = random.randint(-5, 5)
+    distortion_x = tf.random.normal((batch_size, num_anchors, num_anchors, 1), stddev=perturb_sigma)
+    distortion_y = tf.random.normal((batch_size, num_anchors, num_anchors, 1), stddev=perturb_sigma)
+    kwargs = {
+        'batch_size': batch_size,
+        'height': height,
+        'width': width,
+        'num_anchors': num_anchors,
+        'perturb_sigma': perturb_sigma,
+        'distortion_x': distortion_x,
+        'distortion_y': distortion_y
+    }
+    return distort_aug.distort, kwargs
 
-    return images
+
+def shift_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+
+    pad_size = tf.cast(
+        tf.cast(tf.maximum(height, width), tf.float32) * (2.0 - 1.0) / 2 + 0.5, tf.int32)  # larger than usual (sqrt(2))
+    timages = tf.pad(tf.zeros(batch_shape), [[0, 0], [pad_size] * 2, [pad_size] * 2, [0, 0]], 'REFLECT')
+    pwidth, pheight = tf.shape(timages)[1:3]
+
+    shift = tf.cast(tf.cast((pwidth, pheight), tf.float32) * random.choice([a / 1000 for a in range(80, 121)]) + 0.5,
+                    tf.int32)
+    kwargs = {
+        'height': height,
+        'width': width,
+        'pheight': pheight,
+        'pwidth': pwidth,
+        'translation_x': tf.random.uniform([batch_size, 1], -shift[0], shift[0] + 1, dtype=tf.int32),
+        'translation_y': tf.random.uniform([batch_size, 1], -shift[1], shift[1] + 1, dtype=tf.int32)
+    }
+
+    return pres_aug.rand_shift, kwargs
 
 
-def shift_random(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 121)]
+def shear_left_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda': random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.shear_left, kwargs
+
+
+def shear_right_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda': random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.shear_right, kwargs
+
+
+def shear_left_down_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.shear_left_down, kwargs
+
+
+def shear_right_down_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.shear_right_down, kwargs
+
+
+def shear_down_left_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda': random.choice([a / 1000 for a in range(80, 121)]),
+    }
+
+    return trans_aug.shear_down_left, kwargs
+
+
+def shear_down_right_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda': random.choice([a / 1000 for a in range(80, 121)]),
+    }
+
+    return trans_aug.shear_down_right, kwargs
+
+
+def shear_left_up_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.shear_left_up, kwargs
+
+
+def shear_right_up_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.shear_right_up, kwargs
+
+
+#############################
+def nshear_left_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda': -1 * random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.shear_left, kwargs
+
+
+def nshear_right_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda': -1 * random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.shear_right, kwargs
+
+
+def nshear_left_down_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': -1 * random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': -1 * random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.shear_left_down, kwargs
+
+
+
+def nshear_right_down_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': -1 * random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': -1 * random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.shear_right_down, kwargs
+
+
+def nshear_down_left_random(batch_shape):
+    batch_size, width, height,  ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda': -1 * random.choice([a / 1000 for a in range(80, 121)]),
+    }
+
+    return trans_aug.shear_down_left, kwargs
+
+
+def nshear_down_right_random(batch_shape):
+    batch_size, width, height,  ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda': -1 * random.choice([a / 1000 for a in range(80, 121)]),
+    }
+
+    return trans_aug.shear_down_right, kwargs
+
+
+def nshear_left_up_random(batch_shape):
+    batch_size, width, height,  ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': -1 * random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': -1 * random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.shear_left_up, kwargs
+
+
+#skew_left_right_reflect, skew_left_right_repaint, skew_top_down_reflect, skew_top_down_repaint
+##############################
+def skew_left_right_reflect_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.skew_left_right_reflect, kwargs
+
+
+def nskew_left_right_reflect_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': -1*random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': -1*random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.skew_left_right_repaint, kwargs
+
+
+def skew_left_right_repaint_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.skew_left_right_repaint, kwargs
+
+
+def nskew_left_right_repaint_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': -1*random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': -1*random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.skew_left_right_reflect, kwargs
+
+##############################
+def skew_top_down_reflect_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.skew_top_down_reflect, kwargs
+
+
+def nskew_top_down_reflect_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': -1 * random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': -1 * random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.skew_top_down_repaint, kwargs
+
+
+def skew_top_down_repaint_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.skew_top_down_repaint, kwargs
+
+
+def nskew_top_down_repaint_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'shear_lambda1': -1*random.choice([a / 1000 for a in range(80, 121)]),
+        'shear_lambda2': -1*random.choice([a / 1000 for a in range(80, 121)])
+    }
+
+    return trans_aug.skew_top_down_reflect, kwargs
+
+
+##############################
+
+def tilt_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="TILT_LEFT_RIGHT", magnitude=random.randint(1, 5))
+    }
+
+    return trans_aug.tilt_random, kwargs
+
+
+def tilt_up_down_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="TILT_LEFT_RIGHT", magnitude=random.randint(1, 5))
+    }
+
+    return trans_aug.tilt_up_down_random, kwargs
+
+def tilt_left_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="TILT_LEFT_RIGHT", magnitude=random.randint(1, 5))
+    }
+
+    return trans_aug.tilt_left_random, kwargs
+
+
+def tilt_left_up_down_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="TILT_LEFT_RIGHT", magnitude=random.randint(1, 5))
+    }
+
+    return trans_aug.tilt_left_up_down_random, kwargs
+
+
+def tilt_corner_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="CORNER", magnitude=random.randint(1, 5))
+    }
+
+    return trans_aug.tilt_random, kwargs
+
+
+def tilt_up_down_corner_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="CORNER", magnitude=random.randint(1, 5))
+    }
+
+    return trans_aug.tilt_up_down_random, kwargs
+
+def tilt_left_corner_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="CORNER", magnitude=random.randint(1, 5))
+    }
+
+    return trans_aug.tilt_left_random, kwargs
+
+
+def tilt_left_up_down_corner_random(batch_shape):
+    batch_size, width, height, ch = batch_shape
+    kwargs = {
+        'height': height,
+        'width': width,
+        'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="CORNER", magnitude=random.randint(1, 5))
+    }
+
+    return trans_aug.tilt_left_up_down_random, kwargs
+
+
+def cutout_random(batch_shape):
+    batch_size, width, height,  ch = batch_shape
+    scales = [a / 100 for a in range(10, 51)]
     r = random.choice(scales)
-    images = pres_aug.rand_shift(images=images, batch_shape=batch_shape, ratio=r)
-    return images
+    kwargs = {
+    'mask': cutout_aug.rand_mask(batch_size, height, width, ratio=r),
+    'width': width,
+    'height': height
+    }
+
+    return cutout_aug.cutout, kwargs
 
 
-def shear_left_right_random(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 121)]
-    l = random.choice(scales)
-    images = trans_aug.shear_left_right(images=images, batch_shape=batch_shape, shear_lambda=l)
-    return images
+shear_fns = [shear_left_random, shear_right_random, shear_left_down_random, shear_right_down_random, \
+             shear_down_left_random, shear_down_right_random, shear_left_up_random, shear_right_up_random,
+             nshear_left_random, nshear_right_random, nshear_left_down_random,
+             nshear_right_down_random, nshear_down_left_random, nshear_down_right_random,
+             nshear_left_up_random]
 
 
-def shear_right_left_random(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 121)]
-    l = random.choice(scales)
-    images = trans_aug.shear_left_right(images=images, batch_shape=batch_shape, shear_lambda=-l)
-    return images
+skew_fns = [skew_left_right_reflect_random, nskew_left_right_reflect_random,
+            skew_left_right_repaint_random, nskew_left_right_repaint_random,
+            skew_top_down_reflect_random, nskew_top_down_reflect_random,
+            skew_top_down_repaint_random, nskew_top_down_repaint_random]
 
-def shear_down_top_random(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 121)]
-    l = random.choice(scales)
-    images = trans_aug.shear_down_top(images=images, batch_shape=batch_shape, shear_lambda=-l)
-    return images
-
-def shear_top_down_random(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 121)]
-    l = random.choice(scales)
-    images = trans_aug.shear_top_down(images=images, batch_shape=batch_shape, shear_lambda=-l)
-    return images
-
-def skew_left_right_random(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 301)]
-    d_scales = [a / 100 for a in range(150, 301)]
-    ll = random.choice(scales)/random.choice(d_scales)
-    lr = random.choice(scales)/random.choice(d_scales)
-    images = trans_aug.skew_left_right(images=images, batch_shape=batch_shape, \
-                                       l_shear_lambda=ll, r_shear_lambda=lr)
-    return images
-
-
-def skew_top_left_random(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 301)]
-    d_scales = [a / 100 for a in range(150, 301)]
-    ll = random.choice(scales)/random.choice(d_scales)
-    lt = random.choice(scales)/random.choice(d_scales)
-    images = trans_aug.skew_top_left(images=images, batch_shape=batch_shape, \
-                                     t_shear_lambda=lt, l_shear_lambda=ll)
-    return images
-
-def skew_down_left(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 301)]
-    d_scales = [a / 100 for a in range(150, 301)]
-    lt = random.choice(scales)/random.choice(d_scales)
-    ll = random.choice(scales)/random.choice(d_scales)
-    lt *=  -1
-    images = trans_aug.skew_top_left(images=images, batch_shape=batch_shape, \
-                                     t_shear_lambda=lt, \
-                                     l_shear_lambda=ll)
-    return images
-
-
-
-def skew_random1(images, batch_shape=None):
-    images = trans_aug.skew_random_1(images=images, batch_shape=batch_shape)
-    return images
-
-def skew_random2(images, batch_shape=None):
-    images = trans_aug.skew_random_2(images=images, batch_shape=batch_shape)
-    return images
-
-def skew_random3(images, batch_shape=None):
-    images = trans_aug.skew_random_3(images=images, batch_shape=batch_shape)
-    return images
-
-def skew_random4(images, batch_shape=None):
-    images = trans_aug.skew_random_4(images=images, batch_shape=batch_shape)
-    return images
-
-
-def shear_top_right(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 301)]
-    d_scales = [a / 100 for a in range(150, 301)]
-    lt = random.choice(scales)/random.choice(d_scales)
-    ll = random.choice(scales)/random.choice(d_scales)
-    lt  *= -1
-    ll *= -1
-    images = trans_aug.shear_left_down(images=images, batch_shape=batch_shape, \
-                                       t_shear_lambda=lt, \
-                                       l_shear_lambda=ll)
-    return images
-
-
-def shear_left_down(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 301)]
-    d_scales = [a / 100 for a in range(150, 301)]
-    lt = random.choice(scales)/random.choice(d_scales)
-    ll = random.choice(scales)/random.choice(d_scales)
-    images = trans_aug.shear_left_down(images=images, batch_shape=batch_shape, \
-                                       t_shear_lambda=lt, \
-                                       l_shear_lambda=ll)
-    return images
-
-
-def skew_left_top_random(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 301)]
-    d_scales = [a / 100 for a in range(150, 301)]
-    lt = random.choice(scales)/random.choice(d_scales)
-    ll = random.choice(scales)/random.choice(d_scales)
-    images = trans_aug.skew_left_top(images=images, batch_shape=batch_shape, \
-                                     t_shear_lambda=lt, \
-                                     l_shear_lambda=ll)
-    return images
-
-
-def skew_top_down_random(images, batch_shape=None):
-    scales = [a / 1000 for a in range(80, 301)]
-    d_scales = [a / 100 for a in range(150, 301)]
-    lr = random.choice(scales)/random.choice(d_scales)
-    ll = random.choice(scales)/random.choice(d_scales)
-    images = trans_aug.skew_top_down(images=images, batch_shape=batch_shape, \
-                                     t_shear_lambda=ll, \
-                                     d_shear_lambda=lr)
-
-    return images
-
-
-def cutout_random(images, batch_shape=None):
-    scales = [a/100 for a in range(10, 51)]
-    r = random.choice(scales)
-    images = cutout_aug.cutout(images=images, batch_shape=batch_shape, ratio=r)
-    return images
-
+tilt_fns = [tilt_random, tilt_up_down_random, tilt_left_random, tilt_left_up_down_random,
+            tilt_corner_random, tilt_up_down_corner_random, tilt_left_corner_random,
+            tilt_left_up_down_corner_random]
 
 AUGMENT_FNS = {
-    'clone' : [clone],
-    'photo': [add_random_contrast, add_random_contrast, add_random_brightness],
-    'color': [transform_color_space],
-    'cutout': [cutout_random],
+    'clone':   [clone],
+    'photo':   [contrast_random, saturation_random, brightness_random],
+    'color':   [transform_color_space],
+    'cutout':  [cutout_random],
     'distort': [distort_random],
-    'mirror': [flip_left_right],
-    'rotate': [rotate_random],
-    'skew': [shear_top_down_random, shear_left_right_random, shear_down_top_random, \
-             shear_right_left_random,  shear_left_down, shear_top_right, skew_left_right_random, \
-             skew_top_down_random, skew_top_left_random, skew_left_top_random, skew_down_left, \
-             skew_random1, skew_random2, skew_random3, skew_random4],
-    'shift':  [shift_random]
-
+    'mirror':  [flip_left_right],
+    'shift':   [shift_random],
+    'rotate':  [rotate_random],
+    'skew':    shear_fns+skew_fns+tilt_fns
 }
-
-

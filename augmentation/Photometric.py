@@ -1,75 +1,34 @@
 #
 # Photometric augmentations
-# Some codes come from  https://github.com/rpautrat/SuperPoint
-# input image is supposed to be 3D tensor [H,W,C] and floating 0~255 values
 
+import tensorflow as tf
+import tensorflow_addons as tfa
+from augmentation.Coloring import simplest_cb
 import cv2
 import numpy as np
-import tensorflow as tf
+
+def random_brightness(images, **kwargs):
+    images = images + kwargs['magnitude']
+    return adjust_color(tf.clip_by_value(images, 0, 255))
 
 
-def random_brightness(images, max_abs_change=50, batch_shape=None):
-    if batch_shape is not None:
-        batch_size, _, _,_ = batch_shape
-    else:
-        batch_size = tf.unstack(tf.shape(images))[0]
-
-    magnitude = tf.random.uniform([batch_size, 1, 1, 1], minval=-max_abs_change, maxval=max_abs_change)
-    images = images + magnitude
-    return tf.clip_by_value(images, 0, 255)
-
-
-def random_saturation(images, strength_range=[0.5, 1.5], batch_shape=None):
-    if batch_shape is not None:
-        batch_size, _, _,_ = batch_shape
-    else:
-        batch_size = tf.unstack(tf.shape(images))[0]
-
-    magnitude = tf.random.uniform([batch_size, 1, 1, 1], minval=strength_range[0], maxval=strength_range[1])
+def random_saturation(images,  **kwargs):
     images_mean = tf.reduce_mean(images, axis=3, keepdims=True)
-    images = (images - images_mean) * magnitude + images_mean
-    return tf.clip_by_value(images, 0, 255)
+    images = (images - images_mean) * kwargs['magnitude'] + images_mean
+    return adjust_color(tf.clip_by_value(images, 0, 255))
 
 
-def random_contrast(images, strength_range=[0.5, 1.5], batch_shape=None):
-    if batch_shape is not None:
-        batch_size, _, _,_ = batch_shape
-    else:
-        batch_size = tf.unstack(tf.shape(images))[0]
-
-    magnitude = tf.random.uniform([batch_size, 1, 1, 1], minval=strength_range[0], maxval=strength_range[1])
+def random_contrast(images, **kwargs):
     images_mean = tf.reduce_mean(images, axis=[1, 2, 3], keepdims=True)
-    images = (images - images_mean) * magnitude + images_mean
-    return tf.clip_by_value(images, 0, 255)
+    images = (images - images_mean) * kwargs['magnitude'] + images_mean
+    return adjust_color(tf.clip_by_value(images, 0, 255))
 
-
-def additive_shade(images, nb_ellipses=20, transparency_range=[-0.5, 0.8],
-                   kernel_size_range=[250, 350], batch_shape=None):
-    def _py_additive_shade(img):
-        shaded_images = []
+def adjust_color(images):
+    def _py_color(img):
+        images = []
         for i in range(len(img)):
-            imgA = img[i].numpy()
-            min_dim = min(imgA.shape[:2]) / 4
-            mask = np.zeros(imgA.shape[:2], np.uint8)
-            for i in range(nb_ellipses):
-                ax = int(max(np.random.rand() * min_dim, min_dim / 5))
-                ay = int(max(np.random.rand() * min_dim, min_dim / 5))
-                max_rad = max(ax, ay)
-                x = np.random.randint(max_rad, imgA.shape[1] - max_rad)  # center
-                y = np.random.randint(max_rad, imgA.shape[0] - max_rad)
-                angle = np.random.rand() * 90
-                cv2.ellipse(mask, (x, y), (ax, ay), angle, 0, 360, 255, -1)
+            images += [simplest_cb(cv2.cvtColor(
+                img[i].numpy().astype(np.uint8), cv2.IMREAD_COLOR))]
+        return np.array(images)
 
-            transparency = np.random.uniform(*transparency_range)
-            kernel_size = np.random.randint(*kernel_size_range)
-            if (kernel_size % 2) == 0:  # kernel_size has to be odd
-                kernel_size += 1
-            mask = cv2.GaussianBlur(mask.astype(np.float32), (kernel_size, kernel_size), 0)
-            imgA = imgA * (1 - transparency * mask[..., np.newaxis] / 255.)
-            shaded_images += [np.clip(imgA, 0, 255)]
-        shaded_images  = np.array(shaded_images)
-
-        return shaded_images
-
-    shadded =  tf.py_function(_py_additive_shade, [images], tf.float32)
-    return shadded
+    return tf.py_function(_py_color, [images], tf.float32)

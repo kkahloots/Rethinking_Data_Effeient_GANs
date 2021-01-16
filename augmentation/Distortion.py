@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-def distort(images, batch_shape=None, num_anchors=10, perturb_sigma=5.0):
+def distort(images, **kwargs):
     # Similar results to elastic deformation (a bit complex transformation)
     # However, the transformation is much faster that elastic deformation and have a straightforward arguments
     # TODO: Need to adapt reflect padding and eliminate out-of-frame
@@ -9,42 +9,31 @@ def distort(images, batch_shape=None, num_anchors=10, perturb_sigma=5.0):
     # num_anchors : the number of base position to make distortion, total anchors in a image = num_anchors**2
     # perturb_sigma : the displacement sigma of each anchor
 
-    if batch_shape is not None:
-        src_shp_list = batch_shape
-        batch_size, src_height, src_width, _ = batch_shape
-    else:
-        src_shp_list = images.get_shape().as_list()
-        batch_size, src_height, src_width = tf.unstack(tf.shape(images))[:3]
-
-    pad_size = tf.cast(tf.cast(tf.maximum(src_height, src_width), tf.float32) * (np.sqrt(2) - 1.0) / 2 + 0.5, tf.int32)
+    pad_size = tf.cast(tf.cast(tf.maximum(kwargs['height'], kwargs['width']), tf.float32) * (np.sqrt(2) - 1.0) / 2 + 0.5, tf.int32)
     images = tf.pad(images, [[0, 0], [pad_size] * 2, [pad_size] * 2, [0, 0]], 'REFLECT')
     height, width = tf.unstack(tf.shape(images))[1:3]
 
-    mapx_base = tf.matmul(tf.ones(shape=tf.stack([num_anchors, 1])),
-                          tf.transpose(tf.expand_dims(tf.linspace(0., tf.cast(width, tf.float32), num_anchors), 1), [1, 0]))
-    mapy_base = tf.matmul(tf.expand_dims(tf.linspace(0., tf.cast(height, tf.float32), num_anchors), 1),
-                          tf.ones(shape=tf.stack([1, num_anchors])))
+    mapx_base = tf.matmul(tf.ones(shape=tf.stack([kwargs['num_anchors'], 1])),
+                          tf.transpose(tf.expand_dims(tf.linspace(0., tf.cast(width, tf.float32), kwargs['num_anchors']), 1), [1, 0]))
+    mapy_base = tf.matmul(tf.expand_dims(tf.linspace(0., tf.cast(height, tf.float32), kwargs['num_anchors']), 1),
+                          tf.ones(shape=tf.stack([1, kwargs['num_anchors']])))
 
-    mapx_base = tf.tile(mapx_base[None, ..., None], [batch_size, 1, 1, 1])  # [batch_size, N, N, 1]
-    mapy_base = tf.tile(mapy_base[None, ..., None], [batch_size, 1, 1, 1])
-    distortion_x = tf.random.normal((batch_size, num_anchors, num_anchors, 1), stddev=perturb_sigma)
-    distortion_y = tf.random.normal((batch_size, num_anchors, num_anchors, 1), stddev=perturb_sigma)
-    mapx = mapx_base + distortion_x
-    mapy = mapy_base + distortion_y
+    mapx_base = tf.tile(mapx_base[None, ..., None], [kwargs['batch_size'], 1, 1, 1])  # [batch_size, N, N, 1]
+    mapy_base = tf.tile(mapy_base[None, ..., None], [kwargs['batch_size'], 1, 1, 1])
+    #distortion_x = tf.random.normal((kwargs['batch_size'], kwargs['num_anchors'], kwargs['num_anchors'], 1), stddev=kwargs['perturb_sigma'])
+    #distortion_y = tf.random.normal((kwargs['batch_size'], kwargs['num_anchors'], kwargs['num_anchors'], 1), stddev=kwargs['perturb_sigma'])
+    mapx = mapx_base + kwargs['distortion_x']
+    mapy = mapy_base + kwargs['distortion_y']
 
     interp_mapx = tf.compat.v1.image.resize(mapx, size=(height, width), method=tf.image.ResizeMethod.BILINEAR,
                                          align_corners=True)
     interp_mapy = tf.compat.v1.image.resize(mapy, size=(height, width), method=tf.image.ResizeMethod.BILINEAR,
                                          align_corners=True)
     coord_maps = tf.concat([interp_mapx, interp_mapy], axis=-1)  # [batch_size, height, width, 2]
-
-    warp_images = bilinear_sampling(images, coord_maps)
-
-    warp_images = tf.slice(warp_images, [0, pad_size, pad_size, 0], [-1, src_height, src_width, -1])
-
-    warp_images.set_shape(src_shp_list)
-
-    return warp_images
+    images = bilinear_sampling(images, coord_maps)
+    images = tf.slice(images, [0, pad_size, pad_size, 0], [-1, kwargs['height'], kwargs['width'], -1])
+    images = tf.image.resize(images, (kwargs['height'], kwargs['width']))
+    return images
 
 
 def bilinear_sampling(photos, coords):
