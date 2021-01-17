@@ -122,8 +122,11 @@ class Augmented_WGAN_GP:
                 del val_bar
 
             losses = {'g_loss': g_train_loss.result(),
-                      'd_loss': d_train_loss.result(),
-                      'd_val_loss': d_val_loss.result()}
+                      'd_loss': d_train_loss.result()
+                      }
+            if val_dataset is not None:
+                losses = {**losses, 'd_val_loss': d_val_loss.result()}
+
             losses_list += [losses]
             pickle.dump(losses_list, open(f'{self.save_path}/{self.model_name}_losses_list.pkl', 'wb'))
             if plot_live:
@@ -132,7 +135,8 @@ class Augmented_WGAN_GP:
 
             g_train_loss.reset_states()
             d_train_loss.reset_states()
-            d_val_loss.reset_states()
+            if val_dataset is not None:
+                d_val_loss.reset_states()
 
 
             self.G.save_weights(filepath=f'{self.save_path}/{self.model_name}_generator')
@@ -155,9 +159,9 @@ class Augmented_WGAN_GP:
     def train_g(self, image_scale=255.0):
         z = random.normal((self.batch_size, 1, 1, self.z_dim))
         with tf.GradientTape() as t:
-            x_fake = self.G(z, training=True) * image_scale
-            x_fake, _  = self.Augment(images=x_fake, scale=image_scale, \
-                                                        batch_shape=[self.batch_size, *self.image_shape])
+            x_fake = self.G(z, training=True) #* image_scale
+            #x_fake, _  = self.Augment(images=x_fake, scale=image_scale, \
+            #                                            batch_shape=[self.batch_size, *self.image_shape])
             fake_logits= self.D(x_fake, training=True)
             loss = ops.g_loss_fn(fake_logits)
         grad = t.gradient(loss, self.G.trainable_variables)
@@ -169,11 +173,11 @@ class Augmented_WGAN_GP:
         z = random.normal((self.batch_size, 1, 1, self.z_dim))
         with tf.GradientTape() as t:
             x_fake = self.G(z, training=True)
-            #x_fake, flist = self.Augment(images=x_fake, scale=image_scale, \
-            #                        batch_shape=[self.batch_size, *self.image_shape])
+            x_fake, flist = self.Augment(images=x_fake, scale=image_scale, \
+                                    batch_shape=[self.batch_size, *self.image_shape])
             fake_logits = self.D(x_fake, training=True)
             x_real, _ = self.Augment(images=x_real, scale=image_scale, \
-                                     batch_shape=[self.batch_size, *self.image_shape], functions_list=None)
+                                     batch_shape=[self.batch_size, *self.image_shape], functions_list=flist)
             real_logits = self.D(x_real, training=True)
             cost = ops.d_loss_fn(fake_logits, real_logits)
             gp = self.gradient_penalty(partial(self.D, training=True), x_real, x_fake)
