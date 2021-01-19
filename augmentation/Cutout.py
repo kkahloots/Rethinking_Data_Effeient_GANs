@@ -18,6 +18,7 @@ def cutout(images, **kwargs):
     dbatch = dilation2d(images)
     condition = tf.equal(images, 0)
     images = tf.where(condition, dbatch, images)
+    images = tfa.image.equalize(images)
 
     def _py_color_space(img):
         images = []
@@ -58,6 +59,7 @@ def patch(images, **kwargs):
     images = images * kwargs['mask']
     condition = tf.equal(images, 0)
     images = tf.where(condition, case_true, images)
+    images = tfa.image.equalize(images)
     def _py_color_space(img):
         images = []
         for i in range(len(img)):
