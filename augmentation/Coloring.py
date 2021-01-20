@@ -15,7 +15,7 @@ def color_space_transform(images, **kwargs):
                 img[i].numpy().astype(np.uint8), cv2.IMREAD_COLOR), f), cv2.IMREAD_COLOR))]
         return np.array(images)
 
-    return tfa.image.blend(tf.py_function(_py_color_space, [images], tf.float32), images, 0.5)
+    return tfa.image.blend(tf.py_function(_py_color_space, [images], tf.float32), images, 0.6)
 
 
 def color_balance(img, percent=5):
