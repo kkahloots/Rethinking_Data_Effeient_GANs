@@ -548,7 +548,6 @@ tilt_fns = [tilt_random, tilt_up_down_random, tilt_left_random, tilt_left_up_dow
 
 AUGMENT_FNS = {
     'clone':   [clone],
-    'clone1':   [clone],
     'patch':   [patch_random, cutout_random],
     'photo':   [contrast_random, saturation_random, brightness_random],
     'color':   [transform_color_space],
