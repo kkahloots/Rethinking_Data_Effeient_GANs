@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from augmentation.Coloring import enhance_shape
 
 def distort(images, **kwargs):
     # Similar results to elastic deformation (a bit complex transformation)
@@ -33,7 +34,7 @@ def distort(images, **kwargs):
     images = bilinear_sampling(images, coord_maps)
     images = tf.slice(images, [0, pad_size, pad_size, 0], [-1, kwargs['height'], kwargs['width'], -1])
     images = tf.image.resize(images, (kwargs['height'], kwargs['width']))
-    return images
+    return enhance_shape(images)
 
 
 def bilinear_sampling(photos, coords):

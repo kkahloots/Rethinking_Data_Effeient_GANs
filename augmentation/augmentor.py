@@ -16,34 +16,39 @@ class Augmentor:
     def __init__(self):
         self.augmentation_functions = AUGMENT_FNS
 
-    def augment(self, images, batch_shape, scale=255.0,  print_fn=False, functions_list=None):
-        if functions_list is None:
+    def augment(self, images, batch_shape, scale=255.0,  print_fn=False):
+        ix_lists = np.split(np.arange(batch_shape[0]), max(2, batch_shape[0]//6))
+        aug_image = []
+        for ix_list in ix_lists:
             func_keys = random.sample([*self.augmentation_functions.keys()], random.randint(1, 3))
 
             functions_list = [random.sample(self.augmentation_functions[k], 1)[0] for k in func_keys]
-            functions_list = list(map(lambda f: f(batch_shape) ,functions_list))
-            #
-            #
-            # td_prob = 0.1
-            # if np.random.choice([False, True], p=[1 - td_prob, td_prob]):
-            #     fn, kw = random.choice(functions_list)
-            #     print('3d', fn.__name__)
-            #
-            #     def aug_patch_fn(batch_shape):
-            #         td_scales = [a / 100 for a in range(80, 121)]
-            #         kwargs = {'fn': fn, 'scale': td_scales, 'kwargs': kw}
-            #         return td_pres_aug.aug_bg_patches, kwargs
-            #
-            #     functions_list = [aug_patch_fn(batch_shape) if f == fn else (f, kw)  for f,kw in functions_list]
+            functions_list = list(map(lambda f: f([len(ix_list), *batch_shape[1:]]) ,functions_list))
+                #
+                #
+                # td_prob = 0.1
+                # if np.random.choice([False, True], p=[1 - td_prob, td_prob]):
+                #     fn, kw = random.choice(functions_list)
+                #     print('3d', fn.__name__)
+                #
+                #     def aug_patch_fn(batch_shape):
+                #         td_scales = [a / 100 for a in range(80, 121)]
+                #         kwargs = {'fn': fn, 'scale': td_scales, 'kwargs': kw}
+                #         return td_pres_aug.aug_bg_patches, kwargs
+                #
+                #     functions_list = [aug_patch_fn(batch_shape) if f == fn else (f, kw)  for f,kw in functions_list]
 
-        if print_fn:
-            aug_func_name = str([f.__name__ for f, kw in functions_list])
-            print(aug_func_name)
+            if print_fn:
+                aug_func_name = str([f.__name__ for f, kw in functions_list])
+                print(aug_func_name)
 
-        for (f, kw) in functions_list:
-            images = call_fn(f, images, kw)
+            timg = images[ix_list[0]:ix_list[-1]+1]
+            for (f, kw) in functions_list:
+                timg = call_fn(f, timg, kw)
 
-        return images/scale, functions_list
+            aug_image += [timg]
+
+        return tf.random.shuffle(tf.concat(aug_image, axis=0))/scale
 
 
 def call_fn(fn, images, kwargs):
@@ -543,6 +548,7 @@ tilt_fns = [tilt_random, tilt_up_down_random, tilt_left_random, tilt_left_up_dow
 
 AUGMENT_FNS = {
     'clone':   [clone],
+    'clone1':   [clone],
     'patch':   [patch_random, cutout_random],
     'photo':   [contrast_random, saturation_random, brightness_random],
     'color':   [transform_color_space],

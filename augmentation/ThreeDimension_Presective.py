@@ -25,7 +25,7 @@ def _sample_ROI(image):
     return ROIs_sample
 
 def _color_bg(image, bg, ROIs):
-    #radius = bg.shape[0]//3
+    radius = bg.shape[0]//5
 
     for x, y, w, h, approx in ROIs:
         mask = np.zeros(bg.shape[:2], np.uint8)
@@ -34,8 +34,8 @@ def _color_bg(image, bg, ROIs):
         ix = np.where(obj != 0)
         bg[ix] = 255
 
-        #mask = cv2.cvtColor(obj, cv2.COLOR_BGR2GRAY)
-        #bg = cv2.inpaint(bg, mask, radius, flags=cv2.INPAINT_TELEA)
+        mask = cv2.cvtColor(obj, cv2.COLOR_BGR2GRAY)
+        bg = cv2.inpaint(bg, mask, radius, flags=cv2.INPAINT_TELEA)
 
     return bg
 
@@ -76,15 +76,15 @@ def aug_bg_patches(images, **kwargs):
 
     def _py_detect_patches(images):
         bgs = []
-        bg = None
-        if np.random.choice([False, True], p=[1 - 0.25, 0.25]):
-            bg = images[random.choice(range(len(images)))].numpy().astype(np.uint8)
+        #bg = None
+        #if np.random.choice([False, True], p=[1 - 0.25, 0.25]):
+        #    bg = images[random.choice(range(len(images)))].numpy().astype(np.uint8)
 
         for i in range(len(images)):
             image = images[i].numpy().astype(np.uint8)
             ROIs_sample = _sample_ROI(image)
-            if bg is None:
-                bg = image.copy()
+            #if bg is None:
+            #    bg = image.copy()
             bg = _color_bg(image, image.copy(), ROIs_sample)
             bg = kwargs['fn'](images=tf.expand_dims(bg, 0), **kwargs['kwargs']).numpy()[0]
             bg = cv2.cvtColor(bg.astype(np.uint8), cv2.IMREAD_COLOR)
