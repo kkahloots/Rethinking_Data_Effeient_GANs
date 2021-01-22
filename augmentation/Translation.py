@@ -5,6 +5,7 @@ from math import floor, ceil
 import random
 import numpy as np
 import cv2
+from augmentation.Cutout import inpaint
 
 
 def shear_left(images, **kwargs):
@@ -85,22 +86,19 @@ def ishear_rot90_down(images, **kwargs):
 
 #["TILT", "TILT_LEFT_RIGHT", "TILT_TOP_BOTTOM", "CORNER"]
 def tilt_left_random(images, **kwargs):
-    case_true = enhance_shape(expand_background(images), 50)
-    images = tf.pad(images, [[0, 0], [kwargs['height'] // 5, kwargs['height'] // 5],
-                             [kwargs['width'] // 5, kwargs['width'] // 5], [0, 0]], 'CONSTANT')
+    images = tf.pad(images, [[0, 0], [kwargs['height']//10, kwargs['height']//10],
+                             [kwargs['width']//10, kwargs['width']//10], [0, 0]], 'CONSTANT')
     images = tf.image.resize(tfa.image.transform(images,
                                                  kwargs['skew_matrix'],
                                                  interpolation="NEAREST"),
                              (kwargs['height'], kwargs['width']))
-    condition = tf.equal(images, 0)
-    images = tf.where(condition, case_true, images)
-    return images
+
+    return  fix_bourders(images, **kwargs)
 
 
 def tilt_up_random(images, **kwargs):
-    case_true = enhance_shape(expand_background(images), 50)
-    images = tf.pad(images, [[0, 0], [kwargs['height'] // 5, kwargs['height'] // 5],
-                             [kwargs['width'] // 5, kwargs['width'] // 5], [0, 0]], 'CONSTANT')
+    images = tf.pad(images, [[0, 0], [kwargs['height']//10, kwargs['height']//10],
+                             [kwargs['width']//10, kwargs['width']//10], [0, 0]], 'CONSTANT')
 
     images = rot90(images)
     images = rot90(rot90(rot90(
@@ -108,9 +106,8 @@ def tilt_up_random(images, **kwargs):
                                             interpolation="NEAREST"),
                         (kwargs['height'], kwargs['width'])))
     ))
-    condition = tf.equal(images, 0)
-    images = tf.where(condition, case_true, images)
-    return images
+
+    return fix_bourders(images, **kwargs)
 
 
 
@@ -157,6 +154,22 @@ def expand_background(images):
         return np.array(images)
 
     return tf.py_function(_py_extract_background, [images], tf.float32)
+
+
+def fix_bourders(images, **kwargs):
+    mask = tf.pad(images, [[0, 0], [kwargs['height'] // 50, kwargs['height'] // 50],
+                         [kwargs['width'] // 50, kwargs['width'] // 50], [0, 0]], 'CONSTANT')
+    mask = tf.image.resize(mask, (kwargs['height'], kwargs['width']))
+    mask = tf.image.rgb_to_grayscale(mask)
+    mask = tf.where(mask == 0, 255+tf.zeros_like(mask), mask)
+    mask = tf.image.grayscale_to_rgb(tf.where(mask != 255, tf.zeros_like(mask), mask))
+    mask = tf.where(mask == 255, tf.ones_like(mask), mask)
+    mask = images * mask
+    mask = tf.where(mask != 0, tf.ones_like(mask), mask)
+    mask = tf.ones_like(mask) - mask
+    mask = tf.where(mask != 1, tf.zeros_like(mask), mask)
+    images = images * mask
+    return inpaint(images, tf.where(images==0, tf.zeros_like(images), tf.ones_like(images)))
 
 
 @tf.function
