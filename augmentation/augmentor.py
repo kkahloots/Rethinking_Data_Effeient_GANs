@@ -91,8 +91,8 @@ def flip_left_right(batch_shape):
 
 def distort_random(batch_shape):
     batch_size, width, height, ch = batch_shape
-    num_anchors = random.randint(5, 15)
-    perturb_sigma = random.randint(-5, 5)
+    num_anchors = random.randint(8, 12)
+    perturb_sigma = random.randint(-3, 3)
     distortion_x = tf.random.normal((batch_size, num_anchors, num_anchors, 1), stddev=perturb_sigma)
     distortion_y = tf.random.normal((batch_size, num_anchors, num_anchors, 1), stddev=perturb_sigma)
     kwargs = {
@@ -276,7 +276,7 @@ def tilt_left_random(batch_shape):
         'height': height,
         'width': width,
         'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="TILT_LEFT_RIGHT",
-                                                 magnitude=random.randint(1, 5))
+                                                 magnitude=random.randint(1, 3))
     }
 
     return trans_aug.tilt_left_random, kwargs
@@ -287,7 +287,7 @@ def tilt_up_random(batch_shape):
         'height': height,
         'width': width,
         'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="TILT_LEFT_RIGHT",
-                                                 magnitude=random.randint(1, 5))
+                                                 magnitude=random.randint(1, 3))
     }
 
     return trans_aug.tilt_up_random, kwargs
@@ -300,7 +300,7 @@ def tilt_corner_left_random(batch_shape):
         'height': height,
         'width': width,
         'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="CORNER",
-                                                 magnitude=random.randint(1, 5))
+                                                 magnitude=random.randint(1, 3))
     }
 
     return trans_aug.tilt_left_random, kwargs
@@ -311,7 +311,7 @@ def tilt_corner_up_random(batch_shape):
         'height': height,
         'width': width,
         'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="CORNER",
-                                                 magnitude=random.randint(1, 5))
+                                                 magnitude=random.randint(1, 3))
     }
 
     return trans_aug.tilt_up_random, kwargs
