@@ -18,7 +18,7 @@ def color_space_transform(images, **kwargs):
     return tfa.image.blend(tf.py_function(_py_color_space, [images], tf.float32), images, 0.6)
 
 
-def color_balance(img, percent=5):
+def color_balance(img, percent=2.5):
     out_channels = []
     cumstops = (
         img.shape[0] * img.shape[1] * percent / 200.0,

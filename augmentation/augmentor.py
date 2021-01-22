@@ -276,7 +276,7 @@ def tilt_left_random(batch_shape):
         'height': height,
         'width': width,
         'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="TILT_LEFT_RIGHT",
-                                                 magnitude=random.randint(1, 3))
+                                                 magnitude=random.randint(1, 5))
     }
 
     return trans_aug.tilt_left_random, kwargs
@@ -287,7 +287,7 @@ def tilt_up_random(batch_shape):
         'height': height,
         'width': width,
         'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="TILT_LEFT_RIGHT",
-                                                 magnitude=random.randint(1, 3))
+                                                 magnitude=random.randint(1, 5))
     }
 
     return trans_aug.tilt_up_random, kwargs
@@ -300,7 +300,7 @@ def tilt_corner_left_random(batch_shape):
         'height': height,
         'width': width,
         'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="CORNER",
-                                                 magnitude=random.randint(1, 3))
+                                                 magnitude=random.randint(1, 5))
     }
 
     return trans_aug.tilt_left_random, kwargs
@@ -311,7 +311,7 @@ def tilt_corner_up_random(batch_shape):
         'height': height,
         'width': width,
         'skew_matrix': trans_aug.get_skew_matrix(height, width, skew_type="CORNER",
-                                                 magnitude=random.randint(1, 3))
+                                                 magnitude=random.randint(1, 5))
     }
 
     return trans_aug.tilt_up_random, kwargs
