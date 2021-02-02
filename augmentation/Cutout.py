@@ -55,7 +55,7 @@ def dilation2d(img4D):
     return output4D
 
 
-def rand_mask(batch_size, height, width, ratio=0.5):
+def rand_mask(batch_size, height, width, ratio=0.25):
     cutout_size = tf.cast(tf.cast((width, height), tf.float32) * ratio + 0.5, tf.int32)
     offset_x = tf.random.uniform([batch_size, 1, 1], maxval=width + (1 - cutout_size[0] % 2), dtype=tf.int32)
     offset_y = tf.random.uniform([batch_size, 1, 1], maxval=height + (1 - cutout_size[1] % 2), dtype=tf.int32)

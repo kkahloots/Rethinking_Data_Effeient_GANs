@@ -2,6 +2,7 @@
 import numpy as np
 import tensorflow_addons as tfa
 import tensorflow as tf
+from augmentation.Coloring import enhance_shape
 
 def rotate(images, **kwargs):
     images = tf.pad(images, [[0, 0], [5, 5], [5, 5], [0, 0]], 'REFLECT')
@@ -11,7 +12,7 @@ def rotate(images, **kwargs):
     images = tf.pad(images, [[0, 0], [pad_size] * 2, [pad_size] * 2, [0, 0]], 'REFLECT')
 
     images = tfa.image.rotate(images, kwargs['angles']*np.pi/180)
-    return tf.slice(images, [0, pad_size, pad_size, 0], [-1, kwargs['height'], kwargs['width'], -1])
+    return enhance_shape(tf.slice(images, [0, pad_size, pad_size, 0], [-1, kwargs['height'], kwargs['width'], -1]), 1)
 
 
 def rand_shift(images, **kwargs):
@@ -28,4 +29,4 @@ def rand_shift(images, **kwargs):
     grid_y = tf.clip_by_value(tf.expand_dims(tf.range(kwargs['pheight'], dtype=tf.int32), 0) + translation_y + 1, 0, kwargs['pheight'] + 1)
     images = tf.gather_nd(tf.pad(images, [[0, 0], [1, 1], [0, 0], [0, 0]], 'REFLECT'), tf.expand_dims(grid_x, -1), batch_dims=1)
     images = tf.transpose(tf.gather_nd(tf.pad(tf.transpose(images, [0, 2, 1, 3]), [[0, 0], [1, 1], [0, 0], [0, 0]], 'REFLECT'), tf.expand_dims(grid_y, -1), batch_dims=1), [0, 2, 1, 3])
-    return tf.slice(images, [0, pad_size, pad_size, 0], [-1, kwargs['height'], kwargs['width'], -1])
+    return enhance_shape(tf.slice(images, [0, pad_size, pad_size, 0], [-1, kwargs['height'], kwargs['width'], -1]), 1)

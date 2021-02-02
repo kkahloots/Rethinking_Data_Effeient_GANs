@@ -6,11 +6,12 @@ import random
 import numpy as np
 import cv2
 from augmentation.Cutout import inpaint
+from augmentation.Coloring import enhance_shape
 
 
 def shear_left(images, **kwargs):
 
-    images = tf.pad(images, [[0, 0], [5, 5], [5, 5], [0, 0]], 'REFLECT')
+    images = tf.pad(images, [[0, 0], [2, 2], [2, 2], [0, 0]], 'REFLECT')
     images = tf.image.resize(images, (kwargs['height'], kwargs['width']))
 
     pad_size = tf.cast(
@@ -19,7 +20,8 @@ def shear_left(images, **kwargs):
     images = tf.pad(images, [[0, 0], [pad_size] * 2, [pad_size] * 2, [0, 0]], 'REFLECT')
 
     images = transformImg(images, [[1.0, kwargs['shear_lambda'], 0], [0, 1.0, 0], [0, 0, 1.0]])
-    return tf.slice(images, [0, pad_size*2  , pad_size*2 + kwargs['width']//5 , 0], [-1, kwargs['height'], kwargs['width'], -1])
+    images = tf.slice(images, [0, pad_size*2  , pad_size*2 + kwargs['width']//5 , 0], [-1, kwargs['height'], kwargs['width'], -1])
+    return enhance_shape(images, 1)
 
 
 def shear_right(images, **kwargs):
@@ -49,7 +51,7 @@ def ishear_rot90(images, **kwargs):
 ############
 def shear_left_down(images, **kwargs):
 
-    images = tf.pad(images, [[0, 0], [5, 5], [5, 5], [0, 0]], 'REFLECT')
+    images = tf.pad(images, [[0, 0], [2, 2], [2, 2], [0, 0]], 'REFLECT')
     images = tf.image.resize(images, (kwargs['height'], kwargs['width']))
 
     pad_size = tf.cast(
@@ -58,7 +60,8 @@ def shear_left_down(images, **kwargs):
     images = tf.pad(images, [[0, 0], [pad_size] * 2, [pad_size] * 2, [0, 0]], 'REFLECT')
     images = tf.pad(images, [[0, 0], [pad_size] * 2, [pad_size] * 2, [0, 0]], 'REFLECT')
     images = transformImg(images, [[1.0, kwargs['shear_lambda2'] + kwargs['shear_lambda1'], 0], [kwargs['shear_lambda1'], 1.0, 0], [0, 0, 1.0]])
-    return tf.slice(images, [0, pad_size*2  + kwargs['height']//5, pad_size*2  + kwargs['width']//3, 0], [-1, kwargs['height'], kwargs['width'], -1])
+    images = tf.slice(images, [0, pad_size*2  + kwargs['height']//5, pad_size*2  + kwargs['width']//5, 0], [-1, kwargs['height'], kwargs['width'], -1])
+    return enhance_shape(images, 1)
 
 
 def shear_right_down(images, **kwargs):
@@ -97,8 +100,8 @@ def tilt_left_random(images, **kwargs):
 
 
 def tilt_up_random(images, **kwargs):
-    images = tf.pad(images, [[0, 0], [kwargs['height']//10, kwargs['height']//10],
-                             [kwargs['width']//10, kwargs['width']//10], [0, 0]], 'CONSTANT')
+    images = tf.pad(images, [[0, 0], [kwargs['height']//25, kwargs['height']//25],
+                             [kwargs['width']//25, kwargs['width']//25], [0, 0]], 'CONSTANT')
 
     images = rot90(images)
     images = rot90(rot90(rot90(
@@ -111,16 +114,16 @@ def tilt_up_random(images, **kwargs):
 
 
 
-
-def enhance_shape(images, prc=10):
-    def _py_enhance_shape(img):
-        images = []
-        for i in range(len(img)):
-            images += [cv2.detailEnhance(cv2.cvtColor(img[i].numpy().astype(np.uint8), cv2.IMREAD_COLOR),
-                                         10, prc)]
-        return np.array(images)
-
-    return tf.py_function(_py_enhance_shape, [images], tf.float32)
+#
+# def enhance_shape(images, prc=10):
+#     def _py_enhance_shape(img):
+#         images = []
+#         for i in range(len(img)):
+#             images += [cv2.detailEnhance(cv2.cvtColor(img[i].numpy().astype(np.uint8), cv2.IMREAD_COLOR),
+#                                          10, prc)]
+#         return np.array(images)
+#
+#     return tf.py_function(_py_enhance_shape, [images], tf.float32)
 
 
 def expand_background(images):
@@ -157,8 +160,8 @@ def expand_background(images):
 
 
 def fix_bourders(images, **kwargs):
-    mask = tf.pad(images, [[0, 0], [kwargs['height'] // 50, kwargs['height'] // 50],
-                         [kwargs['width'] // 50, kwargs['width'] // 50], [0, 0]], 'CONSTANT')
+    mask = tf.pad(images, [[0, 0], [kwargs['height']//50, kwargs['height']//50],
+                         [kwargs['width']//50, kwargs['width']//50], [0, 0]], 'CONSTANT')
     mask = tf.image.resize(mask, (kwargs['height'], kwargs['width']))
     mask = tf.image.rgb_to_grayscale(mask)
     mask = tf.where(mask == 0, 255+tf.zeros_like(mask), mask)
@@ -169,7 +172,8 @@ def fix_bourders(images, **kwargs):
     mask = tf.ones_like(mask) - mask
     mask = tf.where(mask != 1, tf.zeros_like(mask), mask)
     images = images * mask
-    return inpaint(images, tf.where(images==0, tf.zeros_like(images), tf.ones_like(images)))
+    mask = tf.where(images==0, tf.zeros_like(images), tf.ones_like(images))
+    return enhance_shape(inpaint(images, mask), 1)
 
 
 @tf.function
