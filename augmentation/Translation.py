@@ -11,7 +11,7 @@ from augmentation.Coloring import enhance_shape
 
 def shear_left(images, **kwargs):
 
-    images = tf.pad(images, [[0, 0], [2, 2], [2, 2], [0, 0]], 'REFLECT')
+    images = tf.pad(images, [[0, 0], [5, 5], [5, 5], [0, 0]], 'REFLECT')
     images = tf.image.resize(images, (kwargs['height'], kwargs['width']))
 
     pad_size = tf.cast(
@@ -51,7 +51,7 @@ def ishear_rot90(images, **kwargs):
 ############
 def shear_left_down(images, **kwargs):
 
-    images = tf.pad(images, [[0, 0], [2, 2], [2, 2], [0, 0]], 'REFLECT')
+    images = tf.pad(images, [[0, 0], [5, 5], [5, 5], [0, 0]], 'REFLECT')
     images = tf.image.resize(images, (kwargs['height'], kwargs['width']))
 
     pad_size = tf.cast(
@@ -89,8 +89,8 @@ def ishear_rot90_down(images, **kwargs):
 
 #["TILT", "TILT_LEFT_RIGHT", "TILT_TOP_BOTTOM", "CORNER"]
 def tilt_left_random(images, **kwargs):
-    images = tf.pad(images, [[0, 0], [kwargs['height']//10, kwargs['height']//10],
-                             [kwargs['width']//10, kwargs['width']//10], [0, 0]], 'CONSTANT')
+    images = tf.pad(images, [[0, 0], [kwargs['height']//25, kwargs['height']//25],
+                             [kwargs['width']//25, kwargs['width']//25], [0, 0]], 'CONSTANT')
     images = tf.image.resize(tfa.image.transform(images,
                                                  kwargs['skew_matrix'],
                                                  interpolation="NEAREST"),
@@ -111,19 +111,6 @@ def tilt_up_random(images, **kwargs):
     ))
 
     return fix_bourders(images, **kwargs)
-
-
-
-#
-# def enhance_shape(images, prc=10):
-#     def _py_enhance_shape(img):
-#         images = []
-#         for i in range(len(img)):
-#             images += [cv2.detailEnhance(cv2.cvtColor(img[i].numpy().astype(np.uint8), cv2.IMREAD_COLOR),
-#                                          10, prc)]
-#         return np.array(images)
-#
-#     return tf.py_function(_py_enhance_shape, [images], tf.float32)
 
 
 def expand_background(images):

@@ -340,6 +340,7 @@ shear_fns = [ishear_rot90_down_random, ishear_right_down_random, ishear_left_dow
 
 AUGMENT_FNS = {
     'clone':   [clone],
+    'clone1':   [clone],
     'shear':   shear_fns,
     'tilt':    [tilt_left_random, tilt_up_random, tilt_corner_up_random, tilt_corner_left_random],
     'photo':   [contrast_random, saturation_random, brightness_random],
